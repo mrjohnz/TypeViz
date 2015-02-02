@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var P = TypeViz.Point;
+
+
+        function document_load() {
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 740;
+                canvas = new SVG.Canvas(div, options);
+                var g = new SVG.Group();
+                canvas.Append(g);
+                g.Transform(new SVG.Translation(100,20));
+                var packing = new TypeViz.Layout.Pack();
+                packing.Size = [700, 700];
+                packing.Padding = 1;
+                packing.SortAccessor = null;
+                //packing.ValueAccessor = function (d) { return d.size; };
+                //packing.ChildrenAccessor = function (d) { return d.kids; };
+                //packing.TitleAccessor = function (d) { return d.name; };
+                var graph = TypeViz.Diagramming.Graph.Utils.createRandomConnectedGraph(1550, 15, true);
+                graph.nodes.forEach(function (n) {
+                    n.data = TypeViz.Maths.RandomInteger(10, 200);
+                });
+                packing.Layout(graph);
+
+                var nodes = packing.Hierarchy.FlatList;
+                var factor = 1;
+                for (var i = 0; i < nodes.length; i++) {
+
+                    var node = nodes[i];
+                    var circle = new TypeViz.SVG.Circle();
+                    circle.Radius = node.r * factor;
+                    circle.Opacity = 0.1936;
+                    if (i == 0) { // the root
+                        circle.Background = TypeViz.Media.Colors.White;
+                        circle.Stroke = "Silver";
+                        circle.StrokeThickness = 4;
+                        circle.Opacity = 1;
+                    }
+                    else circle.Background = TypeViz.Media.Colors.RandomBlue;
+
+                    circle.Center = new TypeViz.Point(node.x * factor, node.y * factor);
+                    circle.Title = "Size: " + node.Data;
+                    g.Append(circle);
+                }
+
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+
+
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Pack layout</div>
+        </div>
+        <div class="small-description">
+            This packing layout can be used to view the accumulation of a tree-hierarchy, tree graphs in particular. In a way, it's like looking at a standard tree-diagram from above and the overlap and size is an indication of the size of the branch (amount and size of the children).
+            The example below is a random tree-graph of 1500 nodes, refresh to see other examples. See also the <a href="ClosePack.html"> close packing layout</a> for a similar concept.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="RunningLine.html">&laquo;&nbsp;Data series</a></span>
+            <span style="float:right;"><a href="ClosePack.html">Close packing&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre style="margin-top:50px;"><code>
+        var packing = new TypeViz.Layout.Pack();
+        packing.Size = [800, 800];
+        packing.Padding = 1;
+        packing.SortAccessor = null;
+        packing.ValueAccessor = function (d) { return d.size; };
+        packing.ChildrenAccessor = function (d) { return d.kids; };
+        packing.TitleAccessor = function (d) { return d.name; };
+        var graph = TypeViz.Diagramming.Graph.Utils.createRandomConnectedGraph(1550, 15, true);
+        graph.nodes.forEach(function (n) {
+            n.data = TypeViz.Maths.RandomInteger(10, 200);
+        });
+        packing.Layout(graph);
+        var nodes = packing.Hierarchy.FlatList;
+        var factor = 1;
+        for (var i = 0; i < nodes.length; i++) {
+            var node = nodes[i];
+            var circle = new TypeViz.SVG.Circle();
+            circle.Radius = node.r * factor;
+            circle.Opacity = 0.136;
+            if (i == 0) { // the root
+                circle.Background = TypeViz.Media.Colors.White;
+                circle.Stroke = "Silver";
+                circle.StrokeThickness = 4;
+                circle.Opacity = 1;
+            }
+            else circle.Background = TypeViz.Media.Colors.RandomBlue;
+            circle.Center = new TypeViz.Point(node.x * factor, node.y * factor);
+            circle.Title = "Size: " + node.Data;
+            canvas.Append(circle);
+        }
+</code></pre>
+    </div>
+</body>
+</html>

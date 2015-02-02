@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new TypeViz.SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 500;
+                canvas = new TypeViz.SVG.Canvas(div, options);
+                var g = new TypeViz.SVG.Group();
+                g.Position = new TypeViz.Point(100, 100);
+                canvas.Append(g);
+
+                g.Transform(new TypeViz.SVG.Translation(120, 20));
+                var frame = new TypeViz.SVG.Rectangle();
+                frame.Width = 650;
+                frame.Height = 350;
+                frame.Background = "Transparent";
+                frame.Stroke = "White";
+                frame.CornerRadius = 5;
+                frame.Position = new TypeViz.Point(-15, -14);
+                g.Append(frame);
+
+                var path = new TypeViz.SVG.Path();
+
+                path.Background = "none";
+                var P = TypeViz.Point;
+                var interpolator = TypeViz.SVG.Interpolate({ Interpolator: TypeViz.SVG.Interpolators.SplineInterpolator, IsClosed: false });
+                path.Interpolator = interpolator;
+                var from = [];
+                for (var i = 0; i < 20; i++) {
+                    from.push(new P(80 + i * 25, 300 - TypeViz.Maths.RandomReal(50, 250)));
+                }
+                path.Points = from;
+                path.Stroke = "White";
+                path.Opacity = 0.6;
+                g.Append(path);
+
+                setInterval(function () {
+                    var to = [];
+                    for (var i = 0; i < 20; i++) {
+                        to.push(new P(80 + i * 25, 300 - TypeViz.Maths.RandomReal(50, 250)));
+                    }
+                    path.Change({ Data: to }).Play();
+                }, 3000);
+
+
+                var ax = new TypeViz.Controls.Axis();
+                ax.Position = new P(80, 30);
+                ax.Stroke = "White";
+                g.Append(ax);
+
+                var stack = [];
+                var color = TypeViz.Media.Colors.WhiteSmoke;
+                for (var y = 0; y < 100; y++) {
+                    var rectangle = new SVG.Rectangle(new TypeViz.Point(20, 10 + y * 3));
+                    rectangle.Height = 2;
+                    rectangle.Width = 15;
+                    rectangle.Background = color;
+                    g.Append(rectangle);
+                    color = color.Darker(0.0361);
+                    stack.push(rectangle);
+                }
+                var colorMem = null;
+                setInterval(function () {
+                    if (y >= 100) y = 0;
+                    if (colorMem != null) {
+                        if (y == 0)
+                            stack[99].Background = colorMem;
+                        else
+                            stack[y - 1].Background = colorMem;
+                    }
+                    colorMem = stack[y].Background;
+                    stack[y].Background = "Red";
+                    y++;
+                }, 30);
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Line chart</div>
+        </div>
+        <div class="small-description">
+            Several controls are merged here into a classic line chart; the axis control, the linear gauge and the animated spline. The transformation of a path from one set of points to another is defined through a flexible
+            adapter mechanism.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="Popup.html">&laquo;&nbsp;Pop-ups</a></span>
+            <span style="float:right;"><a href="RadialTree.html">Radial tree&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre style="margin-top:30px;"><code>
+                var P = TypeViz.Point;
+                var interpolator = TypeViz.SVG.Interpolate({
+                     Interpolator: TypeViz.SVG.Interpolators.SplineInterpolator,
+                     IsClosed: false });
+                path.Interpolator = interpolator;
+                var from = [];
+                for (var i = 0; i < 20; i++) {
+                    from.push(new P(80 + i * 25, 300 - TypeViz.Maths.RandomReal(50, 250)));
+                }
+                path.Points = from;
+                path.Stroke = "White";
+                path.Opacity = 0.6;
+                g.Append(path);
+                setInterval(function () {
+                    var to = [];
+                    for (var i = 0; i < 20; i++) {
+                        to.push(new P(80 + i * 25, 300 - TypeViz.Maths.RandomReal(50, 250)));
+                    }
+                    path.Change({ Data: to }).Play();
+                }, 3000);
+                var ax = new TypeViz.Controls.Axis();
+                ax.Position = new P(80, 30);
+                ax.Stroke = "White";
+                g.Append(ax);
+</code>                </pre>
+    </div>
+</body>
+</html>

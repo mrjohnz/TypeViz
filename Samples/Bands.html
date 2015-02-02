@@ -1,0 +1,146 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+    
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 1000;
+                canvas = new SVG.Canvas(div, options);
+
+                var model = new TypeViz.ModelBase();
+                model.ChordData = [];
+                var amount = 3;
+                var colorSeries = function (m) { return [TypeViz.Media.Colors.RandomBlue, TypeViz.Media.Colors.RandomGreen, TypeViz.Media.Colors.RandomRed, TypeViz.Media.Colors.RandomGreen, TypeViz.Media.Colors.RandomBlue][m]; };
+                var delta;
+                var startAngle = -Math.PI/2  ;
+                for (var j = 0; j < 5; j++) {
+
+                    for (var i = 0; i < amount; i++) {
+                        var start =-Math.PI/2 + Math.PI/20*TypeViz.Maths.RandomInteger(1,5);
+                        var end = Math.PI / 2 - Math.PI / 20 * TypeViz.Maths.RandomInteger(1, 5);
+
+                        delta = Math.PI / 40 * TypeViz.Maths.RandomInteger(1, 5);
+                        model.ChordData.push(
+                            {
+                                Background: colorSeries(j),
+                                Opacity: 0.6,
+                                Source: {
+                                    Radius: 250,
+                                    StartAngle: Math.PI,
+                                    EndAngle: Math.PI,
+                                },
+                                Target: {
+                                    Radius: 250,
+                                    StartAngle:  startAngle,
+                                    EndAngle: startAngle + delta,
+                                },
+                                Data : Math.round(delta*1000)/10 + "psi"
+
+                            }
+                        );
+                        startAngle += delta;
+                    }
+                }
+                var chord = new TypeViz.Controls.BandDiagram(model, function (m) { return m.ChordData; });
+
+                canvas.Append(chord);
+                chord.Position = new TypeViz.Point(280, 280);
+
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+    </script>
+    <style>
+        SVG {
+            height: 550px;
+        }
+    </style>
+</head>
+<body onload="document_load()">
+    <div id="main" style="margin: 5% auto;">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Band diagram</div>
+        </div>
+        <div class="small-description">
+            Bands are defined by their start and end sectors (an interval of angles) inside a circle.
+            This type of visualization is ideal to convey intensities of data transfers, e.g synchronization of data between domains. The effectiveness of this diagram is however limited by the amount of data blocks, the more bands the less the clarity of the visual message.
+            See also the <a href="SyncDiagram.html">SyncDiagram</a> for a similar concept.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="RadialDiagram.html">&laquo;&nbsp;Radial diagram</a></span>
+            <span style="float:right;"><a href="SyncDiagram.html">Sync diagram&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre><code>
+    var options = new SVG.CanvasOptions();
+    options.Width = 1000;
+    options.Height = 1000;
+    canvas = new SVG.Canvas(div, options);
+    var model = new TypeViz.ModelBase();
+    model.ChordData = [];
+    var amount = 3;
+    var colorSeries = function (m) { 
+                    return [TypeViz.Media.Colors.RandomBlue, 
+                            TypeViz.Media.Colors.RandomGreen, 
+                            TypeViz.Media.Colors.RandomRed,
+                            TypeViz.Media.Colors.RandomGreen,
+                            TypeViz.Media.Colors.RandomBlue][m]; };
+    var delta;
+    var startAngle = -Math.PI/2  ;
+    for (var j = 0; j < 5; j++) {
+        for (var i = 0; i < amount; i++) {
+            var start =-Math.PI/2 + Math.PI/20*TypeViz.Maths.RandomInteger(1,5);
+            var end = Math.PI / 2 - Math.PI / 20 * TypeViz.Maths.RandomInteger(1, 5);
+            delta = Math.PI / 40 * TypeViz.Maths.RandomInteger(1, 5);
+            model.ChordData.push(
+                {
+                    Background: colorSeries(j),
+                    Opacity: 0.6,
+                    Source: {
+                        Radius: 250,
+                        StartAngle: Math.PI,
+                        EndAngle: Math.PI,
+                    },
+                    Target: {
+                        Radius: 250,
+                        StartAngle:  startAngle,
+                        EndAngle: startAngle + delta,
+                    },
+                    Data : Math.round(delta*1000)/10 + "psi"
+                }
+            );
+            startAngle += delta;
+        }
+    }
+    var chord = new TypeViz.Controls.BandDiagram(model, function (m) { return m.ChordData; });
+    canvas.Append(chord);
+    chord.Position = new TypeViz.Point(280, 280);    
+</code></pre>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,186 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var P = TypeViz.Point;
+        var queue;
+
+        function PlaceIt() {
+            if (queue.length === 0) return;
+            var item = queue.dequeue();
+            item.visual.Change({ Center: item.target, Duration: 50 }, function () { PlaceIt(); }).Play();
+        }
+        function document_load() {
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 550;
+                canvas = new SVG.Canvas(div, options);
+                var g = new SVG.Group();
+                canvas.Append(g);
+                g.Transform(new SVG.Translation(100, 20));
+                var packing = new TypeViz.Layout.Pack();
+                packing.Size = [500, 500];
+                packing.Padding = 3;
+
+                var frame = new SVG.Rectangle();
+                frame.Background = "White";
+                g.Prepend(frame);
+                frame.Width = 600;
+                frame.Height = 600;
+                frame.CornerRadius = 5;
+
+                packing.TitleAccessor = function (d) { return d.Data; };
+
+                var graph = TypeViz.Diagramming.Graph.Utils.createRandomConnectedGraph(700, 15, true);
+                for (var i = 0; i < graph.nodes.length; i++) {
+                    if (i < graph.nodes.length / 3) graph.nodes[i].data = 5 + TypeViz.Maths.RandomInteger(0, 15);
+                    else if (i < 2 * graph.nodes.length / 3) graph.nodes[i].data = 200 + TypeViz.Maths.RandomInteger(0, 50);
+                    else
+                        graph.nodes[i].data = 600 + TypeViz.Maths.RandomInteger(0, 25);
+                }
+                packing.Layout(graph, TypeViz.Layout.PackType.Close);
+
+                var nodes = packing.Hierarchy.FlatList;
+                var factor = 1;
+                queue = new TypeViz.Queue();
+                var root = nodes[0];
+                nodes.Remove(root);
+                nodes = nodes.Shuffle();
+                nodes.Prepend(root);
+                for (var i = 0; i < nodes.length; i++) {
+
+                    var node = nodes[i];
+                    var circle = new TypeViz.SVG.Circle();
+                    circle.Radius = node.r * factor;
+                    circle.Opacity = 0.8;
+                    if (i===0) { // the root
+                        circle.Background = TypeViz.Media.Colors.White;
+                        circle.Stroke = "Black";
+                        circle.StrokeThickness = 1;
+                        circle.Opacity = 1;
+                        circle.Title = "Background";
+                    }
+                    else {
+                        circle.Opacity = 0.741;
+                        circle.Background = (new TypeViz.Media.HSL(node.Data / 170 * 360, 0.8, 0.4)).AsHex6;
+                        queue.enqueue({
+                            visual: circle,
+                            target: new TypeViz.Point(node.x + 50, node.y + 20)
+                        });
+                    }
+
+                    circle.Center = new TypeViz.Point(300, 270);
+                    circle.Title = node.Data;
+                    g.Append(circle);
+
+                }
+                PlaceIt();
+            }
+            else
+                alert('No DIV found.');
+        }
+
+        hljs.initHighlightingOnLoad();
+
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Pack layout</div>
+        </div>
+        <div class="small-description">
+            Sphere packing layout at work. This is very similar to the <a href="TreePack.html"> tree packing algorithm</a> but all children are directly underneath
+            the root instead of a full hierarchy. Here again, a random graph is visualized and complements the classic diagramming viz. This type of visualization is also ideal
+            to visualize clustering.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="TreePack.html">&laquo;&nbsp;Tree packing</a></span>
+            <span style="float:right;"><a href="Grow.html">Growth&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+
+        </div>
+        <pre><code>
+    var options = new SVG.CanvasOptions();
+    options.Width = 1000;
+    options.Height = 550;
+    canvas = new SVG.Canvas(div, options);
+    var g = new SVG.Group();
+    canvas.Append(g);
+    g.Transform(new SVG.Translation(100, 20));
+    var packing = new TypeViz.Layout.Pack();
+    packing.Size = [500, 500];
+    packing.Padding = 3;
+    var frame = new SVG.Rectangle();
+    frame.Background = "White";
+    g.Prepend(frame);
+    frame.Width = 600;
+    frame.Height = 600;
+    frame.CornerRadius = 5;
+    packing.TitleAccessor = function (d) { return d.Data; };
+    var graph = TypeViz.Diagramming.Graph.Utils.createRandomConnectedGraph(700, 15, true);
+    for (var i = 0; i < graph.nodes.length; i++) {
+        if (i < graph.nodes.length / 3) graph.nodes[i].data = 5 + TypeViz.Maths.RandomInteger(0, 15);
+        else if (i < 2 * graph.nodes.length / 3) graph.nodes[i].data = 200 + TypeViz.Maths.RandomInteger(0, 50);
+        else
+            graph.nodes[i].data = 600 + TypeViz.Maths.RandomInteger(0, 25);
+    }
+    packing.Layout(graph, TypeViz.Layout.PackType.Close);
+    var nodes = packing.Hierarchy.FlatList;
+    var factor = 1;
+    queue = new TypeViz.Queue();
+    var root = nodes[0];
+    nodes.Remove(root);
+    nodes = nodes.Shuffle();
+    nodes.Prepend(root);
+    for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        var circle = new TypeViz.SVG.Circle();
+        circle.Radius = node.r * factor;
+        circle.Opacity = 0.8;
+        if (i===0) { // the root
+            circle.Background = TypeViz.Media.Colors.White;
+            circle.Stroke = "Black";
+            circle.StrokeThickness = 1;
+            circle.Opacity = 1;
+            circle.Title = "Background";
+        }
+        else {
+            circle.Opacity = 0.741;
+            circle.Background = (new TypeViz.Media.HSL(node.Data / 170 * 360, 0.8, 0.4)).AsHex6;
+            queue.enqueue({
+                visual: circle,
+                target: new TypeViz.Point(node.x + 50, node.y + 20)
+            });
+        }
+        circle.Center = new TypeViz.Point(300, 270);
+        circle.Title = node.Data;
+        g.Append(circle);
+    }
+    PlaceIt();
+    }
+
+</code></pre>
+    </div>
+</body>
+</html>

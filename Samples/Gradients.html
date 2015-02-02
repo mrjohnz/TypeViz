@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new TypeViz.SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 1000;
+                canvas = new TypeViz.SVG.Canvas(div, options);
+                var gs = new TypeViz.SVG.Group();
+                canvas.Append(gs);
+                gs.Position = new TypeViz.Point(50, 50);
+                for (var i = 0; i < TypeViz.Media.Gradients.Names.length; i++) {
+                    var name = TypeViz.Media.Gradients.Names[i];
+                    var tb = new TypeViz.SVG.TextBlock();
+                    tb.Text = name;
+                    tb.Background = "WhiteSmoke";
+                    tb.Position = new TypeViz.Point(0, i * 50);
+                    gs.Append(tb);
+                    var rec = new TypeViz.SVG.Rectangle(new TypeViz.Point(0, i * 50 + 5));
+                    rec.Width = 150;
+                    rec.Height = 15;
+                    var gr = TypeViz.Media.Gradients.FromName(name);
+                    canvas.AddGradient(gr);
+                    rec.Background = gr;
+                    rec.Title =  rec.Background;
+                    gs.Append(rec);
+
+                    var sampler = new TypeViz.Media.GradientSampler(gr);
+                    sampler.IndexEnd = 50;
+                    for (var k = 0; k < 50; k++) {
+                        rec = new TypeViz.SVG.Rectangle(new TypeViz.Point(250 + k * 7, i * 50 + 5));
+                        rec.Width = 5;
+                        rec.Height = 15;
+                        rec.Background = sampler.ColorAt(k);
+                        rec.Title = rec.Background;
+                        gs.Append(rec);
+                    }
+                }
+
+                // gradient animation
+                var g = new TypeViz.Media.LinearGradient();
+                g.Id = "swa";
+                var o = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.SteelBlue, 0);
+                var w = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.White, 0.9);
+                var e = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.SteelBlue, 1);
+                g.AddGradientStops(o, w, e);
+                canvas.AddGradient(g);
+                var r = new TypeViz.SVG.Rectangle(new TypeViz.Point(0, 300));
+                r.Background = g;
+                r.Width = 600;
+                r.Height = 5;
+                r.StrokeThickness = 13;
+                r.StrokeDash = "4 2 1";
+                gs.Append(r);
+                var s = 0.05;
+                setInterval(function () {
+                    
+                    if (g.GradientStops[1].Offset + s > 1) {
+                        s = -s;
+                        g.GradientStops[1].Offset = 1;
+                    }
+                    else if (g.GradientStops[1].Offset + s < 0) {
+                        s = -s;
+                        g.GradientStops[1].Offset = 0;
+                    }
+                    else {
+                        g.GradientStops[1].Offset = g.GradientStops[1].Offset + s;
+                    } }, 140);
+
+                var c = new TypeViz.SVG.Circle(new TypeViz.Point(30, 400), 50);
+                var rg = new TypeViz.Media.RadialGradient();
+                var st = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.SteelBlue, 1);
+                var ws = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.WhiteSmoke, 0);
+                rg.AddGradientStops(ws,st);
+                rg.Center = new TypeViz.Point(0.35, 0.35);
+                canvas.AddGradient(rg);
+                c.Background = rg;
+                gs.Append(c);
+
+                var c = new TypeViz.SVG.Circle(new TypeViz.Point(180, 400), 50);
+                var rg = new TypeViz.Media.RadialGradient();
+                var st2 = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.SteelBlue, 0.3);
+                var bv2 = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.BlueViolet, 0.1);
+                var ws2 = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.LightSlateGray, 0);
+                rg.AddGradientStops(ws2,bv2,st2);
+                canvas.AddGradient(rg);
+                c.Background = rg;
+                gs.Append(c);
+            }
+            else
+                alert('No DIV found.');
+        }
+
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Gradients</div>
+        </div>
+        <br />
+        <div class="small-description">Gradients can be sampled to colors and animated. Presets are available and gradient stops can be manipulated.</div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="Factory.html">&laquo;&nbsp;Factory</a></span>
+            <span style="float:right;"><a href="TreeLayout.html">Tree layout&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../src/Globals.js" type="text/javascript"></script>
+    <script src="../src/Extensions.js" type="text/javascript"></script>
+    <script src="../src/Model.js" type="text/javascript"></script>
+    <script src="../src/Maths.js" type="text/javascript"></script>
+    <script src="../src/Animation.js" type="text/javascript"></script>
+    <script src="../src/Arrays.js" type="text/javascript"></script>
+    <script src="../src/SVG.js" type="text/javascript"></script>
+    <script src="../src/Structures.js" type="text/javascript"></script>
+    <script src="../src/Media.js" type="text/javascript"></script>
+    <script src="../src/Controls.js" type="text/javascript"></script>
+    <script src="../src/Layout.js" type="text/javascript"></script>
+    <script src="../src/Diagramming.js" type="text/javascript"></script>
+    <script src="../src/Diagramming.Graph.js" type="text/javascript"></script>
+    <script src="../src/Diagramming.Layout.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var Point = TypeViz.Point;
+        var CENTER = new TypeViz.Point(300, 300);
+        var mainGroup;
+
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 1000;
+                canvas = new SVG.Canvas(div, options);
+                mainGroup = new TypeViz.SVG.Group();
+                canvas.Append(mainGroup);
+
+
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+    </script>
+    <style>
+        SVG {
+            height: 550px;
+        }
+    </style>
+</head>
+<body onload="document_load()">
+    <div id="main" style="margin: 5% auto;">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Band diagram</div>
+        </div>
+        <div class="small-description">
+            Put your description here.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="TreePack.html">&laquo;&nbsp;Tree packing</a></span>
+            <span style="float:right;"><a href="Grow.html">Growth&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+    </div>
+    <pre><code>
+</code></pre>
+</body>
+</html>

@@ -1,0 +1,340 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8"/>
+<title>SVG playground</title>
+    <script src="../../src/Globals.js" type="text/javascript"></script>
+<script src="../../src/Extensions.js" type="text/javascript"></script>
+<script src="../../src/TypeViz.js" type="text/javascript"></script>
+<script src="../../src/Maths.js" type="text/javascript"></script>
+<script src="../../src/Animation.js" type="text/javascript"></script>
+<script src="../../src/Arrays.js" type="text/javascript"></script>
+<script src="../../src/SVG.js" type="text/javascript"></script>
+<script src="../../src/Controls.js" type="text/javascript"></script>
+<script src="../../src/Structures.js" type="text/javascript"></script>
+<script src="../../src/Media.js" type="text/javascript"></script>
+<style type="text/css">
+    circle {
+        fill: Red;
+        stroke-width: 2;
+
+    }
+
+    svg {
+        background-color: silver;
+    }
+</style>
+<script type="text/javascript">
+var canvas;
+var SVG = TypeViz.SVG;
+var P = TypeViz.Point;
+var addCircle = function (p) {
+    var c = new SVG.Circle();
+    c.Radius = 100;
+    c.Position = p;
+    c.StrokeThickness = 0;
+    c.Opacity = 1.13;
+    c.Background = "Orange";
+    canvas.Append(c);
+    return c;
+};
+var addLine = function (p, q) {
+    var l = new SVG.Line(p, q);
+    l.Stroke = "SteelBlue";
+    l.StrokeThickness = 2;
+    canvas.Append(l);
+    return l;
+};
+var inter, model;
+function document_load() {
+
+
+    var div = document.getElementById("canvas");
+    if (div) {
+        var options = new SVG.CanvasOptions();
+        options.Width = 1000;
+        options.Height = 800;
+        canvas = new SVG.Canvas(div, options);
+
+        var origin = new SVG.Circle();
+        //origin.Background = TypeViz.Media.Colors.DarkOrchid;
+        origin.Position = new TypeViz.Point(0, 0);
+        origin.Radius = 15;
+        canvas.Append(origin);
+
+        var drain = new SVG.Circle();
+        drain.Background = TypeViz.Media.Colors.DarkOrchid;
+        drain.Position = new TypeViz.Point(700, 700);
+        drain.Radius = 15;
+        canvas.Append(drain);
+
+
+        function RandomTree(amount, maxDegree) {
+            if (!maxDegree) maxDegree = 3;
+            if (!amount) amount = 25;
+            var counter = 0, all = [];
+            var root = {
+                id: 0,
+                children: [],
+                value: 5
+            };
+            all.push(root);
+            for (var k = 0; k < amount; k++) {
+                var parent = all[TypeViz.Maths.RandomInteger(0, all.length)];
+                while (parent.children && parent.children.length >= maxDegree) {
+                    parent = all[TypeViz.Maths.RandomInteger(0, all.length)];
+                }
+                var node = {
+                    id: ++counter,
+                    children: [],
+                    value: TypeViz.Maths.RandomInteger(5, 35)
+                };
+                parent.children.push(node);
+                all.push(node);
+            }
+            return root;
+        }
+
+        model = new TypeViz.ModelBase();
+        model.Center = new P(400, 400);
+        model.N = 25;
+        model.L = 15;
+
+        model.Thresholds = [];
+        model.Items = [];
+        model.CurrentItems = [];
+        model.tree = null;
+        model.Root = null;
+        model.flatten = function () {
+            if (!this.tree)return;
+            function collect(node, nodes) {
+                nodes.push(node);
+                if (node.children && node.children.length > 0) {
+                    for (var i = 0; i < node.children.length; i++) {
+                        var n = node.children[i];
+                        collect(n, nodes);
+                    }
+                }
+            }
+
+            var nodes = [];
+            collect(this.tree, nodes);
+            this.Items = nodes;
+            this.Root = nodes[0];
+        }
+        model.Load = function (tree) {
+            this.tree = tree;
+            this.flatten();
+            this.CurrentItems = this.Items;
+            this.CentralItem = {
+                name: "Center",
+                value: 50
+            };
+            this.Thresholds = [
+                {   name: "First",
+                    value: 120
+                },
+                {
+                    name: "Second",
+                    value: 160
+                },
+                {
+                    name: "Third",
+                    value: 210
+                },
+                {
+                    name: "Fourth",
+                    value: 290
+                }
+
+            ];
+
+            this.RaiseChanged("Thresholds");
+            this.RaiseChanged("CentralItem");
+            this.RaiseChanged("CurrentItems");
+        }
+
+        model.Filter = function (acceptor) {
+            this.CurrentItems = this.Items.Filter(acceptor);
+            console.log(this.CurrentItems.length);
+            this.RaiseChanged("CurrentItems");
+        }
+
+        var onstage = [];
+        var pathsOnStage = [];
+
+        function CreateVisual(item) {
+            var circle = new TypeViz.SVG.Circle();
+            circle.Center = model.Center;
+            circle.Radius = item.value;
+            circle.Background = TypeViz.Media.Colors.RandomBlue;
+            item.visual = circle;
+        }
+
+        function perimeterPosition() {
+            var angle = 2 * Math.PI * TypeViz.Maths.RandomReal();
+            return new P(model.Center.X + 500 * Math.cos(angle), model.Center.Y + 500 * Math.sin(angle));
+        }
+
+        function thresholdPosition() {
+            var angle = 2 * Math.PI * TypeViz.Maths.RandomReal();
+            var r = model.Thresholds[TypeViz.Maths.RandomInteger(0, model.Thresholds.length)].value;
+            return new P(model.Center.X + r * Math.cos(angle), model.Center.Y + r * Math.sin(angle));
+        }
+
+        function flyout(c) {
+
+            c.Change({Position: perimeterPosition(), Opacity: 0},function () {
+                canvas.Remove(c);
+            }).Play();
+        }
+
+        function flyin(c, p) {
+            c.Center = model.Center;
+            c.Opacity = 0.01;
+            c.Change({Position: new P(p.X - c.Radius, p.Y - c.Radius), Opacity: 1}).Play();
+        }
+
+        function WhenThresholdsChanged(m, name) {
+            if (name !== "Thresholds") return;
+            for (var k = 0; k < m.Thresholds.length; k++) {
+                var th = m.Thresholds[k];
+                if (!th.visual) {
+                    var c = new TypeViz.SVG.Circle();
+                    c.Background = "none";
+                    c.Stroke = "Silver";
+                    c.StrokeThickness = 1;
+                    c.Radius = 0;
+                    c.Center = m.Center;
+                    canvas.Append(c);
+                    th.visual = c;
+                }
+                th.visual.Change({Radius: th.value}).Play();
+            }
+        }
+
+        function WhenCentralItemChanged(m, name) {
+            if (name !== "CentralItem") return;
+            if (!m.CentralItem.visual) {
+                var cv = new TypeViz.SVG.Circle();
+                cv.Center = model.Center;
+                cv.Background = "Orange";
+                cv.Radius = 0;
+                canvas.Append(cv);
+                m.CentralItem.visual = cv;
+            }
+            cv.Change({Radius: m.CentralItem.value}).Play();
+        }
+
+        var interpolator = TypeViz.SVG.Interpolate({ Interpolator: TypeViz.SVG.Interpolators.SplineInterpolator, IsClosed: false });
+
+        function showPath(from, to) {
+
+            var sourcePoint = from.position;
+            var targetPoint = to.position;
+            if(!(sourcePoint && targetPoint) )return;
+            if (sourcePoint.Minus(targetPoint).Length > 120) return;
+            var path = new TypeViz.SVG.Path();
+            var sourceVector = sourcePoint.Minus(model.Center);
+            var targetVector = targetPoint.Minus(model.Center);
+            var halfPoint = sourceVector.Plus(targetVector).Times(0.7).Plus(model.Center);
+            var tofrom = halfPoint.Minus(sourcePoint).Normalize().Times(halfPoint.Minus(sourcePoint).Length * 0.42).Plus(sourcePoint);
+            var toto = halfPoint.Minus(targetPoint).Normalize().Times(halfPoint.Minus(targetPoint).Length * 0.42).Plus(targetPoint);
+            path.Interpolator = interpolator;
+            path.Points = [sourcePoint,  toto, targetPoint];
+            path.Opacity = 0.1;
+
+            canvas.Prepend(path);
+            pathsOnStage.push(path);
+            path.Change({Opacity: 1.0}).Play();
+        }
+
+        function WhenCurrentItemsChanged(m, name) {
+            if (name !== "CurrentItems") return;
+            var alreadythere = [];
+            var toremove = [];
+            var thingshavechanged = false;
+            var currentids = model.CurrentItems.Map(function (d) {
+                return d.id
+            });
+            for (var k = 0; k < onstage.length; k++) {
+                if (!currentids.Contains(onstage[k].id)) {
+                    toremove.push(onstage[k]);
+                }
+                else
+                    alreadythere.push(onstage[k].id);
+            }
+            thingshavechanged = toremove.length>0;
+            while (toremove.length > 0) {
+                var item = toremove[0];
+                item.position = null;
+                flyout(item.visual);
+                toremove.Remove(item);
+                onstage.Remove(item);
+            }
+            for (var k = 0; k < model.CurrentItems.length; k++) {
+                var item = model.CurrentItems[k];
+                if (alreadythere.Contains(item.id)) continue;
+                if (!item.visual) {
+                    CreateVisual(item);
+                }
+                thingshavechanged = true;
+                canvas.Append(item.visual);
+                var position = thresholdPosition();
+                item.position = position;
+                flyin(item.visual, position);
+                onstage.push(item);
+
+            }
+            setTimeout(
+                    function () {
+                        if(!thingshavechanged) return;
+                        while (pathsOnStage.length > 0) {
+                            var path = pathsOnStage[0];
+                            canvas.Remove(path);
+                            pathsOnStage.Remove(path);
+                        }
+                        for (var k = 0; k < model.CurrentItems.length; k++) {
+                            for (var l = 0; l < model.CurrentItems.length && l != k; l++) {
+                                var item1 = model.CurrentItems[k];
+                                var item2 = model.CurrentItems[l];
+                                showPath(item1, item2);
+                            }
+                        }
+                    }
+                    , 1200);
+
+        }
+
+
+        model.Subscribe(WhenThresholdsChanged);
+        model.Subscribe(WhenCurrentItemsChanged);
+        model.Subscribe(WhenCentralItemChanged);
+        model.Load(RandomTree());
+
+
+        var incidence = new TypeViz.Map();
+
+    }
+
+    else
+        alert('No DIV found.');
+}
+function dosomething() {
+
+}
+function slidered() {
+    var slider = document.getElementById('slider');
+    model.Filter(function (item) {
+        return (item.value <= slider.value);
+    });
+}
+
+</script>
+</head>
+<body onload="document_load()">
+<div id="canvas"></div>
+<button onclick="dosomething()">Change</button>
+<input id="slider" type="range" min="0" max="57" value="57" onmouseup="slidered()"/>
+</body>
+</html>

@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var diagram;
+        var Point = TypeViz.Point;
+        function addShape(options) {
+            options = options || {};
+            var pos = options.Position || TypeViz.Maths.RandomPosition();
+            var id = options.Id || TypeViz.RandomId();
+
+            var template = TypeViz.Diagramming.Shapes.Rectangle;
+            template.Position = pos;
+            template.Width = 20 + TypeViz.Maths.RandomInteger(0,20);
+            template.Height = 20;
+            template.Stroke = "white";
+            template.StrokeThickness = 1;
+            template.Opacity = 0.8;
+            template.CornerRadius = 2;
+            template.Id = id;
+            template.Background = TypeViz.Media.Colors.RandomBlue;// "#778899";
+            var shape = diagram.AddShape(template);
+            return shape;
+        }
+
+        function connect(a, b) {
+            var con = diagram.AddConnection(a, b);
+            return con;
+        }
+
+        function createDiagram() {
+            TypeViz.Diagramming.Graph.Utils._addShape = addShape;
+            var graph = TypeViz.Diagramming.Graph.Utils.createRandomConnectedGraph(80,3);
+            TypeViz.Diagramming.Graph.Utils.createDiagramFromGraph(diagram, graph);
+            var settings = new TypeViz.Diagramming.LayoutSettings();
+            settings.Type = TypeViz.Diagramming.LayoutTypes.LayeredLayout;
+            settings.SubType = TypeViz.Diagramming.LayeredLayoutType.Down;
+            settings.NodeDistance = 15;
+            settings.VerticalSeparation = 25;
+            settings.HorizontalSeparation = 15;
+            settings.LayerSeparation = 35;
+            //settings.Animate = true;
+            diagram.Layout(settings);
+            diagram.Zoom = 0.2;
+        }
+        function document_load() {
+            var div = document.getElementById("canvas");
+            if (div) {
+                diagram = new TypeViz.Diagramming.DiagramSurface(div);
+                createDiagram();
+            } else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Layered Layout</div>
+        </div>
+        <br />
+        <div class="small-description">Random connected graph with layered layout (aka <a href="http://en.wikipedia.org/wiki/Layered_graph_drawing" target="_blank">sugiyama layout</a>). refresh the page for another random sample. use the<strong>mouse-wheel</strong> to zoom in/out and <strong>CTRL-Drag</strong> to pan the diagram. This type of graph
+        layout is ideal to convey a flow or complex relationships. It applies to arbitrary graphs (also disconnected ones) and minimizes the link crossings.</div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="SyncDiagram.html">&laquo;&nbsp;Sync diagram</a></span>
+            <span style="float:right;"><a href="Yield.html">Finance viz&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre><code>
+    TypeViz.Diagramming.Graph.Utils._addShape = addShape;
+    var graph = TypeViz.Diagramming.Graph.Utils.createRandomConnectedGraph(80,3);
+    TypeViz.Diagramming.Graph.Utils.createDiagramFromGraph(diagram, graph);
+    var settings = new TypeViz.Diagramming.LayoutSettings();
+    settings.Type = TypeViz.Diagramming.LayoutTypes.LayeredLayout;
+    settings.SubType = TypeViz.Diagramming.LayeredLayoutType.Down;
+    settings.NodeDistance = 15;
+    settings.VerticalSeparation = 25;
+    settings.HorizontalSeparation = 15;
+    settings.LayerSeparation = 35;
+    diagram.Layout(settings);
+    diagram.Zoom = 0.2;
+            </code>
+</pre>
+    </div>
+
+</body>
+</html>

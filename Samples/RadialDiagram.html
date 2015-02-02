@@ -1,0 +1,719 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var Point = TypeViz.Point;
+        var CENTER = new Point(400, 400);
+        var interpolator = TypeViz.SVG.Interpolate({ Interpolator: TypeViz.SVG.Interpolators.CardinalInterpolator, IsClosed: false });
+        var model;
+        function AddPipeline() {
+            
+            var line = new SVG.Path();
+            line.Points = [CENTER, new Point(75, CENTER.Y), new Point(75,20), new Point(310,20), new Point(330,5)];
+            line.Stroke = "Silver";
+            line.Opacity = 0.8;
+            line.StrokeThickness = 2;
+
+            canvas.Append(line);
+
+            var statsRectangle = new SVG.Rectangle();
+            statsRectangle.Width = 70;
+            statsRectangle.Height = 130;
+            statsRectangle.CornerRadius = 5;
+            statsRectangle.Background = "Silver";
+            statsRectangle.Position = new Point(40, 90);
+            canvas.Append(statsRectangle);
+            var unit = new SVG.Circle();
+            unit.Radius = 5;
+            unit.Stroke = "Silver";
+            unit.Background = "rgb(196, 196, 196)";
+            unit.Center = new Point(330, 4);
+            canvas.Append(unit);
+
+        }
+        function document_load() {
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 800;
+                canvas = new SVG.Canvas(div, options);
+               
+
+                AddPipeline();
+                function RandomTree(amount, maxDegree) {
+                    if (!maxDegree) maxDegree = 3;
+                    if (!amount) amount = 25;
+                    var counter = 0, all = [];
+                    var root = {
+                        id: 0,
+                        children: [],
+                        value: 5
+                    };
+                    all.push(root);
+                    for (var k = 0; k < amount; k++) {
+                        var parent = all[TypeViz.Maths.RandomInteger(0, all.length)];
+                        while (parent.children && parent.children.length >= maxDegree) {
+                            parent = all[TypeViz.Maths.RandomInteger(0, all.length)];
+                        }
+                        var node = {
+                            id: ++counter,
+                            children: [],
+                            value: TypeViz.Maths.RandomInteger(5, 35)
+                        };
+                        parent.children.push(node);
+                        all.push(node);
+                    }
+                    return root;
+                }
+
+                model = new TypeViz.ModelBase();
+                model.Center = CENTER;
+                model.N = 25;
+                model.L = 15;
+
+                model.Thresholds = [];
+                model.Items = [];
+                model.CurrentItems = [];
+                model.tree = null;
+                model.Root = null;
+                model.flatten = function () {
+                    if (!this.tree) return;
+
+                    function collect(node, nodes) {
+                        nodes.push(node);
+                        if (node.children && node.children.length > 0) {
+                            for (var i = 0; i < node.children.length; i++) {
+                                var n = node.children[i];
+                                collect(n, nodes);
+                            }
+                        }
+                    }
+
+                    var nodes = [];
+                    collect(this.tree, nodes);
+                    this.Items = nodes;
+                    this.Root = nodes[0];
+                };
+                model.Load = function (tree) {
+                    this.tree = tree;
+                    this.flatten();
+                    this.CurrentItems = this.Items;
+                    this.CentralItem = {
+                        name: "Center",
+                        value: 50
+                    };
+                    this.Thresholds = [
+                        {
+                            name: "First",
+                            value: 120
+                        },
+                        {
+                            name: "Second",
+                            value: 160
+                        },
+                        {
+                            name: "Third",
+                            value: 210
+                        },
+                        {
+                            name: "Fourth",
+                            value: 290
+                        }
+                    ];
+
+                    this.RaiseChanged("Thresholds");
+                    this.RaiseChanged("CentralItem");
+                    this.RaiseChanged("CurrentItems");
+                };
+
+                model.Filter = function (acceptor) {
+                    this.CurrentItems = this.Items.Filter(acceptor);
+                    console.log(this.CurrentItems.length);
+                    this.RaiseChanged("CurrentItems");
+                };
+
+                var onstage = [];
+                var pathsOnStage = [];
+                var histogram = null;
+                var gauge = null;
+
+                function CreateVisual(item) {
+                    var circle = new TypeViz.SVG.Circle();
+                    circle.Center = model.Center;
+                    circle.Radius = item.value;
+                    circle.Background = TypeViz.Media.Colors.RandomBlue;
+                    item.visual = circle;
+                }
+
+                function perimeterPosition() {
+                    var angle = 2 * Math.PI * TypeViz.Maths.RandomReal();
+                    return new Point(model.Center.X + 500 * Math.cos(angle), model.Center.Y + 500 * Math.sin(angle));
+                }
+
+                function thresholdPosition(thresholdId) {
+                    var angle = 2 * Math.PI * TypeViz.Maths.RandomReal();
+                    var r = model.Thresholds[thresholdId].value;
+                    return new Point(model.Center.X + r * Math.cos(angle), model.Center.Y + r * Math.sin(angle));
+                }
+
+                function flyout(c) {
+
+                    c.Change({ Position: perimeterPosition(), Opacity: 0 }, function () {
+                        canvas.Remove(c);
+                    }).Play();
+                }
+
+                function flyin(c, p) {
+                    c.Center = model.Center;
+                    c.Opacity = 0.01;
+                    c.Change({ Position: new Point(p.X - c.Radius, p.Y - c.Radius), Opacity: 1 }).Play();
+                }
+
+                function WhenThresholdsChanged(m, name) {
+                    if (name !== "Thresholds") return;
+                    for (var k = 0; k < m.Thresholds.length; k++) {
+                        var th = m.Thresholds[k];
+                        if (!th.visual) {
+                            var c = new TypeViz.SVG.Circle();
+                            c.Background = "none";
+                            c.Stroke = "Silver";
+                            c.StrokeThickness = 1;
+                            c.Radius = 0;
+                            c.Center = m.Center;
+                            canvas.Append(c);
+                            th.visual = c;
+                        }
+                        th.visual.Change({ Radius: th.value }).Play();
+                    }
+                }
+
+                function WhenCentralItemChanged(m, name) {
+                    if (name !== "CentralItem") return;
+                    if (!m.CentralItem.visual) {
+                        var cv = new TypeViz.SVG.Circle();
+                        cv.Center = model.Center;
+                        cv.Background = "Orange";
+                        cv.Radius = 0;
+                        canvas.Append(cv);
+                        m.CentralItem.visual = cv;
+                    }
+                    cv.Change({ Radius: m.CentralItem.value }).Play();
+                }
+
+
+                function showPath(from, to) {
+
+                    var sourcePoint = from.position;
+                    var targetPoint = to.position;
+                    if (!(sourcePoint && targetPoint)) return;
+                    if (sourcePoint.Minus(targetPoint).Length > 120) return;
+                    var path = new TypeViz.SVG.Path();
+                    var sourceVector = sourcePoint.Minus(model.Center);
+                    var targetVector = targetPoint.Minus(model.Center);
+                    var halfPoint = sourceVector.Plus(targetVector).Times(0.7).Plus(model.Center);
+                    var tofrom = halfPoint.Minus(sourcePoint).Normalize().Times(halfPoint.Minus(sourcePoint).Length * 0.42).Plus(sourcePoint);
+                    var toto = halfPoint.Minus(targetPoint).Normalize().Times(halfPoint.Minus(targetPoint).Length * 0.42).Plus(targetPoint);
+                    path.Interpolator = interpolator;
+                    path.Points = [sourcePoint, toto, targetPoint];
+                    path.Opacity = 0.1;
+                    path.Stroke = "White";
+                    canvas.Prepend(path);
+                    pathsOnStage.push(path);
+                    path.Change({ Opacity: 1.0 }).Play();
+
+                    /*
+                     Puts a label on the path
+                     var totalPathLength = path.Native.getTotalLength();
+                     var step = totalPathLength / 2
+                     var pt = path.Native.getPointAtLength(step);
+                     var tb = new TypeViz.SVG.TextBlock();
+                     tb.Position = new Point(pt.x,pt.y);
+                     tb.Anchor = TypeViz.SVG.TextAnchor.Right;
+                     tb.Text = from.id;
+                     tb.Background = "DimGray" ;
+                     canvas.Append(tb);*/
+                }
+
+                function changeHistogram(index, v) {
+                    if (histogram.values.Contains(index))
+                        histogram.values.Set(index, Math.max(0, histogram.values.Get(index) + v));
+                    else
+                        histogram.values.Set(index, Math.max(0, v));
+
+                }
+
+                function WhenCurrentItemsChanged(m, name) {
+                    if (name !== "CurrentItems") return;
+                    var alreadythere = [];
+                    var toremove = [];
+                    var thingshavechanged = false;
+                    if (!histogram) {
+                        histogram = {};
+                        histogram.visual = new TypeViz.SVG.Group();
+                        histogram.bars = [];
+                        histogram.texts = [];
+                        histogram.values = new TypeViz.Map();
+                        canvas.Append(histogram.visual);
+                        histogram.visual.Position = new Point(50, 200);
+                    }
+                    if (!gauge) {
+                        gauge = new TypeViz.SVG.Arc();
+                        canvas.Append(gauge);
+                        gauge.InnerRadius = m.CentralItem.value;
+                        gauge.OuterRadius = gauge.InnerRadius + 5;
+                        gauge.Center = m.Center;
+                        gauge.Background = "OrangeRed";
+                        gauge.EndAngle = 0;
+                        gauge.Stroke = "none";
+
+                    }
+                    var currentids = model.CurrentItems.Map(function (d) {
+                        return d.id
+                    });
+                    for (var k = 0; k < onstage.length; k++) {
+                        if (!currentids.Contains(onstage[k].id)) {
+                            toremove.push(onstage[k]);
+                        }
+                        else
+                            alreadythere.push(onstage[k].id);
+                    }
+                    thingshavechanged = toremove.length > 0;
+                    while (toremove.length > 0) {
+                        var item = toremove[0];
+                        changeHistogram(item.ThresholdId, -1);
+                        item.position = null;
+                        flyout(item.visual);
+                        toremove.Remove(item);
+                        onstage.Remove(item);
+                    }
+                    for (var k = 0; k < model.CurrentItems.length; k++) {
+                        var item = model.CurrentItems[k];
+                        if (alreadythere.Contains(item.id)) continue;
+                        if (!item.visual) {
+                            CreateVisual(item);
+                        }
+                        thingshavechanged = true;
+                        canvas.Append(item.visual);
+                        item.ThresholdId = TypeViz.Maths.RandomInteger(0, model.Thresholds.length);
+                        var position = thresholdPosition(item.ThresholdId);
+                        changeHistogram(item.ThresholdId, 1);
+
+                        item.position = position;
+                        flyin(item.visual, position);
+                        onstage.push(item);
+
+                    }
+                    setTimeout(
+                            function () {
+                                if (!thingshavechanged) return;
+                                while (pathsOnStage.length > 0) {
+                                    var path = pathsOnStage[0];
+                                    canvas.Remove(path);
+                                    pathsOnStage.Remove(path);
+                                }
+                                for (var k = 0; k < model.CurrentItems.length; k++) {
+                                    for (var l = 0; l < model.CurrentItems.length && l != k; l++) {
+                                        var item1 = model.CurrentItems[k];
+                                        var item2 = model.CurrentItems[l];
+                                        showPath(item1, item2);
+                                    }
+                                }
+                            }
+                            , 1200);
+
+                    // histogram
+                    for (var k = 0; k < model.Thresholds.length; k++) {
+                        var th = model.Thresholds[k].value;
+                        if (!histogram.bars[k]) {
+                            var bar = histogram.bars[k] = new TypeViz.SVG.Rectangle();
+                            histogram.visual.Append(bar);
+                            bar.Width = 11;
+                            bar.Height = 0;
+                            bar.Background = "Red";
+                            //bar.Position = new Point(k * 11, 150);
+                            bar.Transform(new TypeViz.SVG.Scale(1, -1), new TypeViz.SVG.Translation(k * 12, 0));
+                            var text = new TypeViz.SVG.TextBlock();
+                            text.Background = "DimGray";
+                            text.Text = "0";
+                            text.Anchor = TypeViz.SVG.TextAnchor.Center;
+                            text.Position = new Point(k * 14, 0);
+                            text.dy = 1;
+                            text.dx = 2;
+                            text.Background = TypeViz.Media.Colors.WhiteSmoke;
+                            histogram.texts.push(text);
+                            histogram.visual.Append(text);
+                        }
+                        histogram.bars[k].Change({ Height: histogram.values.Get(k) * 10 }).Play();
+                        histogram.texts[k].Text = histogram.values.Get(k);
+                    }
+                    gauge.Change({ EndAngle: 2 * Math.PI * currentids.length / m.Items.length }).Play();
+                }
+
+
+                model.Subscribe(WhenThresholdsChanged);
+                model.Subscribe(WhenCurrentItemsChanged);
+                model.Subscribe(WhenCentralItemChanged);
+                model.Load(RandomTree());
+
+            }
+
+            else
+                alert('No DIV found.');
+
+            document.getElementById('title').focus();
+
+        }
+
+        function slidered() {
+            var slider = document.getElementById('slider');
+            model.Filter(function (item) {
+                return (item.value <= slider.value);
+            });
+        }
+        hljs.initHighlightingOnLoad();
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Radial diagram</div>
+        </div>
+        <div class="small-description">
+            This demonstrates the MVC mechanics in TypeViz and the ability to create interactive visualizations triggers by changing the underlying model. The diagram is on its own an interesting way of presenting various values by means of colors, different radii, concentric circles and connection lines suggesting the interrelations between entities.
+            It resembles a bit a circular graph layout of non-tree data sets.  See also the <a href="RadialTree.html">radial tree layout</a> for a similar concept.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="Easings.html">&laquo;&nbsp;Easings</a></span>
+            <span style="float:right;"><a href="Bands.html">Bands&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div style="margin-top: 50px;position: absolute;">
+                <span style="margin: 0px 10px 0 0; height: 21px; float: left;font-size: 10pt;">Threshold:</span>
+                <input id="slider" type="range" min="0" max="40" value="40" onmouseup="slidered()" style="width: 250px;" />
+            </div>
+            <div id="canvas" style="margin-top:57px;"></div>
+           
+        </div>
+        <pre><code>
+    var options = new SVG.CanvasOptions();
+    options.Width = 1000;
+    options.Height = 800;
+    canvas = new SVG.Canvas(div, options);
+    function RandomTree(amount, maxDegree) {
+        if (!maxDegree) maxDegree = 3;
+        if (!amount) amount = 25;
+        var counter = 0, all = [];
+        var root = {
+            id: 0,
+            children: [],
+            value: 5
+        };
+        all.push(root);
+        for (var k = 0; k < amount; k++) {
+            var parent = all[TypeViz.Maths.RandomInteger(0, all.length)];
+            while (parent.children && parent.children.length >= maxDegree) {
+                parent = all[TypeViz.Maths.RandomInteger(0, all.length)];
+            }
+            var node = {
+                id: ++counter,
+                children: [],
+                value: TypeViz.Maths.RandomInteger(5, 35)
+            };
+            parent.children.push(node);
+            all.push(node);
+        }
+        return root;
+    }
+    model = new TypeViz.ModelBase();
+    model.Center = new Point(400, 400);
+    model.N = 25;
+    model.L = 15;
+    model.Thresholds = [];
+    model.Items = [];
+    model.CurrentItems = [];
+    model.tree = null;
+    model.Root = null;
+    model.flatten = function () {
+        if (!this.tree) return;
+        function collect(node, nodes) {
+            nodes.push(node);
+            if (node.children && node.children.length > 0) {
+                for (var i = 0; i < node.children.length; i++) {
+                    var n = node.children[i];
+                    collect(n, nodes);
+                }
+            }
+        }
+        var nodes = [];
+        collect(this.tree, nodes);
+        this.Items = nodes;
+        this.Root = nodes[0];
+    };
+    model.Load = function (tree) {
+        this.tree = tree;
+        this.flatten();
+        this.CurrentItems = this.Items;
+        this.CentralItem = {
+            name: "Center",
+            value: 50
+        };
+        this.Thresholds = [
+            {
+                name: "First",
+                value: 120
+            },
+            {
+                name: "Second",
+                value: 160
+            },
+            {
+                name: "Third",
+                value: 210
+            },
+            {
+                name: "Fourth",
+                value: 290
+            }
+        ];
+        this.RaiseChanged("Thresholds");
+        this.RaiseChanged("CentralItem");
+        this.RaiseChanged("CurrentItems");
+    };
+    model.Filter = function (acceptor) {
+        this.CurrentItems = this.Items.Filter(acceptor);
+        console.log(this.CurrentItems.length);
+        this.RaiseChanged("CurrentItems");
+    };
+    var onstage = [];
+    var pathsOnStage = [];
+    var histogram = null;
+    var gauge = null;
+    function CreateVisual(item) {
+        var circle = new TypeViz.SVG.Circle();
+        circle.Center = model.Center;
+        circle.Radius = item.value;
+        circle.Background = TypeViz.Media.Colors.RandomBlue;
+        item.visual = circle;
+    }
+    function perimeterPosition() {
+        var angle = 2 * Math.PI * TypeViz.Maths.RandomReal();
+        return new Point(model.Center.X + 500 * Math.cos(angle),
+                    model.Center.Y + 500 * Math.sin(angle));
+    }
+    function thresholdPosition(thresholdId) {
+        var angle = 2 * Math.PI * TypeViz.Maths.RandomReal();
+        var r = model.Thresholds[thresholdId].value;
+        return new Point(model.Center.X + r * Math.cos(angle), 
+                model.Center.Y + r * Math.sin(angle));
+    }
+    function flyout(c) {
+        c.Change({ Position: perimeterPosition(), Opacity: 0 }, function () {
+            canvas.Remove(c);
+        }).Play();
+    }
+    function flyin(c, p) {
+        c.Center = model.Center;
+        c.Opacity = 0.01;
+        c.Change({ Position: new Point(p.X - c.Radius, p.Y - c.Radius), 
+            Opacity: 1 }).Play();
+    }
+    function WhenThresholdsChanged(m, name) {
+        if (name !== "Thresholds") return;
+        for (var k = 0; k < m.Thresholds.length; k++) {
+            var th = m.Thresholds[k];
+            if (!th.visual) {
+                var c = new TypeViz.SVG.Circle();
+                c.Background = "none";
+                c.Stroke = "Silver";
+                c.StrokeThickness = 1;
+                c.Radius = 0;
+                c.Center = m.Center;
+                canvas.Append(c);
+                th.visual = c;
+            }
+            th.visual.Change({ Radius: th.value }).Play();
+        }
+    }
+    function WhenCentralItemChanged(m, name) {
+        if (name !== "CentralItem") return;
+        if (!m.CentralItem.visual) {
+            var cv = new TypeViz.SVG.Circle();
+            cv.Center = model.Center;
+            cv.Background = "Orange";
+            cv.Radius = 0;
+            canvas.Append(cv);
+            m.CentralItem.visual = cv;
+        }
+        cv.Change({ Radius: m.CentralItem.value }).Play();
+    }
+    var interpolator = TypeViz.SVG.Interpolate({ 
+                        Interpolator: TypeViz.SVG.Interpolators.Spline, 
+                        IsClosed: false 
+                        });
+    function showPath(from, to) {
+        var sourcePoint = from.position;
+        var targetPoint = to.position;
+        if (!(sourcePoint && targetPoint)) return;
+        if (sourcePoint.Minus(targetPoint).Length > 120) return;
+        var path = new TypeViz.SVG.Path();
+        var sourceVector = sourcePoint.Minus(model.Center);
+        var targetVector = targetPoint.Minus(model.Center);
+        var halfPoint = sourceVector.Plus(targetVector).Times(0.7).Plus(model.Center);
+        var tofrom = halfPoint.Minus(sourcePoint).Normalize().
+                Times(halfPoint.Minus(sourcePoint).Length * 0.42).Plus(sourcePoint);
+        var toto = halfPoint.Minus(targetPoint).Normalize()
+                .Times(halfPoint.Minus(targetPoint).Length * 0.42).Plus(targetPoint);
+        path.Interpolator = interpolator;
+        path.Points = [sourcePoint, toto, targetPoint];
+        path.Opacity = 0.1;
+        path.Stroke = "White";
+        canvas.Prepend(path);
+        pathsOnStage.push(path);
+        path.Change({ Opacity: 1.0 }).Play();
+        /*
+            Puts a label on the path
+            var totalPathLength = path.Native.getTotalLength();
+            var step = totalPathLength / 2
+            var pt = path.Native.getPointAtLength(step);
+            var tb = new TypeViz.SVG.TextBlock();
+            tb.Position = new Point(pt.x,pt.y);
+            tb.Anchor = TypeViz.SVG.TextAnchor.Right;
+            tb.Text = from.id;
+            tb.Background = "DimGray" ;
+            canvas.Append(tb);*/
+    }
+    function changeHistogram(index, v) {
+        if (histogram.values.Contains(index))
+            histogram.values.Set(index, Math.max(0, histogram.values.Get(index) + v));
+        else
+            histogram.values.Set(index, Math.max(0, v));
+    }
+    function WhenCurrentItemsChanged(m, name) {
+        if (name !== "CurrentItems") return;
+        var alreadythere = [];
+        var toremove = [];
+        var thingshavechanged = false;
+        if (!histogram) {
+            histogram = {};
+            histogram.visual = new TypeViz.SVG.Group();
+            histogram.bars = [];
+            histogram.texts = [];
+            histogram.values = new TypeViz.Map();
+            canvas.Append(histogram.visual);
+            histogram.visual.Position = new Point(50, 200);
+        }
+        if (!gauge) {
+            gauge = new TypeViz.SVG.Arc();
+            canvas.Append(gauge);
+            gauge.InnerRadius = m.CentralItem.value;
+            gauge.OuterRadius = gauge.InnerRadius + 5;
+            gauge.Center = m.Center;
+            gauge.Background = "OrangeRed";
+            gauge.EndAngle = 0;
+            gauge.Stroke = "none";
+        }
+        var currentids = model.CurrentItems.Map(function (d) {
+            return d.id
+        });
+        for (var k = 0; k < onstage.length; k++) {
+            if (!currentids.Contains(onstage[k].id)) {
+                toremove.push(onstage[k]);
+            }
+            else
+                alreadythere.push(onstage[k].id);
+        }
+        thingshavechanged = toremove.length > 0;
+        while (toremove.length > 0) {
+            var item = toremove[0];
+            changeHistogram(item.ThresholdId, -1);
+            item.position = null;
+            flyout(item.visual);
+            toremove.Remove(item);
+            onstage.Remove(item);
+        }
+        for (var k = 0; k < model.CurrentItems.length; k++) {
+            var item = model.CurrentItems[k];
+            if (alreadythere.Contains(item.id)) continue;
+            if (!item.visual) {
+                CreateVisual(item);
+            }
+            thingshavechanged = true;
+            canvas.Append(item.visual);
+            item.ThresholdId = TypeViz.Maths.RandomInteger(0, model.Thresholds.length);
+            var position = thresholdPosition(item.ThresholdId);
+            changeHistogram(item.ThresholdId, 1);
+            item.position = position;
+            flyin(item.visual, position);
+            onstage.push(item);
+        }
+        setTimeout(
+                function () {
+                    if (!thingshavechanged) return;
+                    while (pathsOnStage.length > 0) {
+                        var path = pathsOnStage[0];
+                        canvas.Remove(path);
+                        pathsOnStage.Remove(path);
+                    }
+                    for (var k = 0; k < model.CurrentItems.length; k++) {
+                        for (var l = 0; l < model.CurrentItems.length && l != k; l++) {
+                            var item1 = model.CurrentItems[k];
+                            var item2 = model.CurrentItems[l];
+                            showPath(item1, item2);
+                        }
+                    }
+                }
+                , 1200);
+        // histogram
+        for (var k = 0; k < model.Thresholds.length; k++) {
+            var th = model.Thresholds[k].value;
+            if (!histogram.bars[k]) {
+                var bar = histogram.bars[k] = new TypeViz.SVG.Rectangle();
+                histogram.visual.Append(bar);
+                bar.Width = 11;
+                bar.Height = 0;
+                bar.Background = "Red";
+                //bar.Position = new Point(k * 11, 150);
+                bar.Transform(new TypeViz.SVG.Scale(1, -1), new TypeViz.SVG.Translation(k * 12, 0));
+                var text = new TypeViz.SVG.TextBlock();
+                text.Background = "DimGray";
+                text.Text = "0";
+                text.Anchor = TypeViz.SVG.TextAnchor.Center;
+                text.Position = new Point(k * 14, 0);
+                text.dy = 1;
+                text.dx = 2;
+                text.Background = TypeViz.Media.Colors.WhiteSmoke;
+                histogram.texts.push(text);
+                histogram.visual.Append(text);
+            }
+            histogram.bars[k].Change({ Height: histogram.values.Get(k) * 10 }).Play();
+            histogram.texts[k].Text = histogram.values.Get(k);
+        }
+        gauge.Change({ EndAngle: 2 * Math.PI * currentids.length / m.Items.length }).Play();
+    }
+    model.Subscribe(WhenThresholdsChanged);
+    model.Subscribe(WhenCurrentItemsChanged);
+    model.Subscribe(WhenCentralItemChanged);
+    model.Load(RandomTree());
+            </code>
+            </pre>
+    </div>
+</body>
+</html>

@@ -1,0 +1,108 @@
+﻿body {
+    background-color: dimgray;
+    color: whitesmoke;
+    font-family: "Segoe UI";
+}
+
+#main {
+    margin: 5% auto 15% auto;
+    width: 60%;
+}
+a {
+    color:rgb(138, 206, 77);
+    text-decoration: none;
+    font-weight: bolder;
+}
+
+#canvas {
+    background-color: transparent;
+    margin: 0 auto 0 auto;
+    outline: none;
+}
+
+#title {
+    font-size: 18pt;
+    color: whitesmoke;
+    float: left;
+    /*margin: 20px 0 20px 0;*/
+}
+
+#subtitle {
+    font-size: 18pt;
+    margin-left: 5px;
+    float: left;
+}
+
+#emph {
+    width: 5px;
+    height: 31px;
+    background-color: rgb(138, 206, 77);
+    margin: 0 5px 0 0;
+    float: left;
+}
+
+.nabble {
+    border: 1px solid whitesmoke;
+    padding: 0px;
+    float: left;
+    margin: 3px;
+    width: 100px;
+    height: 100px;
+}
+
+#viz {
+    border-top: 1px solid whitesmoke;
+    border-bottom: 1px solid whitesmoke;
+    padding: 10px auto 10px auto;
+}
+
+#header {
+    display: table;
+    height: 50px;
+}
+
+
+
+#description {
+    margin: 30px 0 32px 0;
+}
+
+.small-description {
+    margin: 10px 0 10px 0;
+    font-size: 9pt;
+}
+
+#samples {
+    border-top: 1px solid whitesmoke;
+    border-bottom: 1px solid whitesmoke;
+    padding: 10px 0 10px 0;
+    display: table;
+}
+
+.emphasis {
+    color: rgb(138, 206, 77);
+    font-weight: bold;
+}
+
+#contacter a {
+    float: right;
+    margin: 5px 5px;
+    text-decoration: none;
+    color: whitesmoke;
+    font-size: 10pt;
+}
+
+pre {
+    width: 100%;
+    margin: 20px auto 30px auto;
+    border: 1px solid dimgray;
+}
+
+code {
+    -ms-border-radius: 5px;
+    border-radius: 5px;
+}
+.Navigator a {
+    margin: 5px 0;
+    font-size: 8pt;
+}

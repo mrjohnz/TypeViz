@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 500;
+                canvas = new SVG.Canvas(div, options);
+                var g = new SVG.Group();
+                g.Position = new TypeViz.Point(100, 50);
+                canvas.Append(g);
+                var frame = new TypeViz.SVG.Rectangle();
+                frame.Stroke = "White";
+                frame.Background = "Transparent";
+                frame.CornerRadius = 5;
+                frame.Height = 400;
+                frame.Width = 700;
+                g.Append(frame);
+                var model = [];
+                for (var i = 0; i < 10; i++) {
+                    model.push({
+                        Id: i,
+                        Weight: TypeViz.Maths.RandomReal(10, 100)
+                    });
+                }
+                var wheel = new TypeViz.Controls.WheelChart(model);
+                wheel.InnerRadius = 20;
+                wheel.OuterRadius = 100;
+                g.Append(wheel);
+                wheel.Position = new TypeViz.Point(200, 200);
+
+                model = [];
+                for (var i = 0; i < 20; i++) {
+                    model.push({
+                        Id: i,
+                        Weight: TypeViz.Maths.RandomReal(10, 100)
+                    });
+                }
+                wheel = new TypeViz.Controls.WheelChart(model);
+                wheel.ColorFunction = function(d, i) { return TypeViz.Media.Colors.RandomGreen.AsHex6; };
+                wheel.InnerRadius = 100;
+                wheel.OuterRadius = 150;
+                g.Append(wheel);
+                wheel.Position = new TypeViz.Point(200, 200);
+
+                for (var i = 0; i < 5; i++) {
+                    var r1 = new TypeViz.SVG.Arc();
+                    r1.InnerRadius = 150 + i*50;
+                    r1.OuterRadius = 200 + i*50;
+                    r1.StartAngle = Math.PI / 2 - Math.PI / 20;
+                    r1.EndAngle = Math.PI / 2 + Math.PI / 20;
+                    r1.Background = TypeViz.Media.Colors.RandomGray;
+                    r1.StrokeThickness = 1;
+                    r1.Stroke = "Transparent";
+                    r1.Transform(new TypeViz.SVG.Translation(200, 200));
+                    g.Append(r1);
+                }
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Wheel chart</div>
+        </div>
+        <div class="small-description">
+            Wheel charts, arcs, segments and pie charts are easily created. While other libraries give you ready-made controls, TypeViz focuses on algorithms, visualization factories and the ability to
+            combine visual elements in unique and expressive data visualizations.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="RadialTree.html">&laquo;&nbsp;Radial tree</a></span>
+            <span style="float:right;"><a href="RunningLine.html">Data series&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre><code>
+    var options = new SVG.CanvasOptions();
+    options.Width = 1000;
+    options.Height = 500;
+    canvas = new SVG.Canvas(div, options);
+    var g = new SVG.Group();
+    g.Position = new TypeViz.Point(100, 50);
+    canvas.Append(g);
+    var frame = new TypeViz.SVG.Rectangle();
+    frame.Stroke = "White";
+    frame.Background = "Transparent";
+    frame.CornerRadius = 5;
+    frame.Height = 400;
+    frame.Width = 700;
+    g.Append(frame);
+    var model = [];
+    for (var i = 0; i < 10; i++) {
+        model.push({
+            Id: i,
+            Weight: TypeViz.Maths.RandomReal(10, 100)
+        });
+    }
+    var wheel = new TypeViz.Controls.WheelChart(model);
+    wheel.InnerRadius = 20;
+    wheel.OuterRadius = 100;
+    g.Append(wheel);
+    wheel.Position = new TypeViz.Point(200, 200);
+    model = [];
+    for (var i = 0; i < 20; i++) {
+        model.push({
+            Id: i,
+            Weight: TypeViz.Maths.RandomReal(10, 100)
+        });
+    }
+    wheel = new TypeViz.Controls.WheelChart(model);
+    wheel.ColorFunction = function(d, i) { return TypeViz.Media.Colors.RandomGreen.AsHex6; };
+    wheel.InnerRadius = 100;
+    wheel.OuterRadius = 150;
+    g.Append(wheel);
+    wheel.Position = new TypeViz.Point(200, 200);
+    for (var i = 0; i < 5; i++) {
+        var r1 = new TypeViz.SVG.Arc();
+        r1.InnerRadius = 150 + i*50;
+        r1.OuterRadius = 200 + i*50;
+        r1.StartAngle = Math.PI / 2 - Math.PI / 20;
+        r1.EndAngle = Math.PI / 2 + Math.PI / 20;
+        r1.Background = TypeViz.Media.Colors.RandomGray;
+        r1.StrokeThickness = 1;
+        r1.Stroke = "Transparent";
+        r1.Transform(new TypeViz.SVG.Translation(200, 200));
+        g.Append(r1);
+    }
+</code></pre>
+    </div>
+</body>
+</html>

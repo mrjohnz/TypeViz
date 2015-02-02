@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../../styles/TypeScript.css" rel="stylesheet" />
+
+    <script src="../../src/Globals.js" type="text/javascript"></script>
+    <script src="../../src/Extensions.js" type="text/javascript"></script>
+    <script src="../../src/TypeViz.js" type="text/javascript"></script>
+    <script src="../../src/Maths.js" type="text/javascript"></script>
+    <script src="../../src/Animation.js" type="text/javascript"></script>
+    <script src="../../src/Arrays.js" type="text/javascript"></script>
+    <script src="../../src/SVG.js" type="text/javascript"></script>
+    <script src="../../src/Structures.js" type="text/javascript"></script>
+    <script src="../../src/Media.js" type="text/javascript"></script>
+    <script src="../../src/Diagramming.js" type="text/javascript"></script>
+    <script src="../../src/Diagramming.Graph.js" type="text/javascript"></script>
+    <script src="../../src/Diagramming.Layout.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var diagram;
+        var Point = TypeViz.Point;
+        function addShape(options) {
+            options = options || {};
+            var pos = options.Position || TypeViz.Maths.RandomPosition();
+            var id = options.Id || TypeViz.RandomId();
+            
+            var template = TypeViz.Diagramming.Shapes.Rectangle;
+            template.Position = pos;
+            template.Width = 120;
+            template.Height = 80;
+            template.Id = id;
+            template.DefaultContent = TypeViz.RandomId();
+            template.Background = "#778899";
+            var shape = diagram.AddShape(template);
+            return shape;
+        }
+        function connect(a, b) {
+            var con = diagram.AddConnection(a, b);
+            return con;
+        }
+        function createDiagram() {
+            var a = addShape();
+            var b = addShape();
+            var c = addShape();
+            var d = addShape();
+            var e = addShape();
+            connect(a, b);
+            connect(a, c);
+            connect(c, d);
+            var con = connect(c, e);
+            diagram.Layout();
+            var p = e.Rectangle;
+            con.Points = [new Point(p.X, p.Y - 20), new Point(p.X + p.Width, p.Y - 20)];
+
+            /*var graph = TypeViz.Diagramming.Graph.Utils.createRandomConnectedGraph();*/
+            /*var graph = TypeViz.Diagramming.Graph.Utils.createBalancedForest(7,2,2);
+            TypeViz.Diagramming.Graph.Utils.createDiagramFromGraph(diagram, graph);
+            var settings = new TypeViz.Diagramming.LayoutSettings();
+            settings.Type = TypeViz.Diagramming.LayoutTypes.TreeLayout;
+            //settings.SubType = TypeViz.Diagramming.TreeLayoutType.RadialTree;
+            settings.SubType = TypeViz.Diagramming.TreeLayoutType.RadialTree;
+            settings.NodeDistance = 15;
+            settings.VerticalSeparation = 25;
+            settings.HorizontalSeparation = 15;
+            settings.LayerSeparation = 15;
+            //settings.Animate = true;
+            diagram.Layout(settings);*/
+            diagram.Zoom = 0.85;
+        }
+        function document_load() {
+            var div = document.getElementById("canvas");
+            if (div) {
+                diagram = new TypeViz.Diagramming.DiagramSurface(div);
+                createDiagram();
+            } else
+                alert('No DIV found.');
+        }
+
+    </script>
+</head>
+    <body onload="document_load()">
+        <div id="main">
+            <div id="header">
+                <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Diagram</div>
+            </div>
+            <div id="viz">
+                <div id="canvas"></div>
+
+            </div>
+        </div>
+        
+    </body>
+</html>

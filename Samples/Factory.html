@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var P = TypeViz.Point;
+
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 300;
+                canvas = new SVG.Canvas(div, options);
+
+
+                var mod = new TypeViz.ModelBase();
+                mod.Update = function () {
+                    mod.Radii = TypeViz.Maths.RandomIntegerArray(15, 5, 80);
+                    mod.RaiseChanged();
+                };
+                mod.Update();
+                canvas.DataContext = mod;
+                var factory = [
+                    {
+                        accessor: function (m) {
+                            return m.Radii;
+                        },
+                        creator: function (d, i, series) {
+                            var circle = new TypeViz.SVG.Circle(new TypeViz.Point(50 + i * 50, 100));
+                            circle.Background = TypeViz.Media.Colors.RandomBlue;
+                            circle.Opacity = .6;
+                            return circle;
+                        },
+                        binders: function (c, i) {
+                            c.Bind("Radius", function (m) {
+                                c.Change({Radius: m.Radii[i]}).Play();
+                            });
+                        }
+                    },
+                    {
+                        accessor: function (m) {
+                            return m.Radii;
+                        },
+                        creator: function (d, i, series) {
+                            var tb = new TypeViz.SVG.TextBlock();
+                            tb.Position = new TypeViz.Point(50 + i * 50, 170);
+                            tb.Anchor = TypeViz.SVG.TextAnchor.Center;
+                            tb.dx = 15;
+                            return tb;
+                        },
+                        binders: function (c, i) {
+                            c.Bind("Text", function (m) {
+                                return m.Radii[i];
+                            });
+                        }
+                    }
+                ];
+
+                canvas.Define(factory);
+
+                var gauge = new TypeViz.SVG.Path();
+                canvas.Append(gauge);
+                var arrow = TypeViz.SVG.Markers.ArrowEnd;
+                canvas.AddMarker(arrow);
+                gauge.MarkerEnd = arrow;
+                function GaugePoints() {
+                    var ps = [];
+                    var currentValue = new TypeViz.Point(TypeViz.Maths.RandomInteger(60, 750), 180);
+                    ps.push(currentValue);
+                    ps.push(new TypeViz.Point(currentValue.X, currentValue.Y + 30));
+                    ps.push(new TypeViz.Point(800, currentValue.Y + 30));
+                    return ps;
+                }
+
+                gauge.Points = GaugePoints();
+                gauge.Bind("Points", function (m) { gauge.Change({ Data: GaugePoints() }).Play(); });
+
+
+                setInterval(function () {
+                    mod.Update();
+                }, 3000);
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Factory</div>
+        </div>
+        <div class="small-description">
+            TypeViz incorporates a whole range of MVC/MVVM type of patterns which alleviate the problem of binding data dynamically to visuals. This sample shows the so-called 'factory' which defines the visual, the underlying data and the
+            the way data-changes affect the visuals.
+        </div>
+
+        <div class="Navigator">
+            <span style="float:left;"><a href="Mindmap.html">&laquo;&nbsp;Mindmap</a></span>
+            <span style="float:right;"><a href="Gradients.html">Gradients&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre><code>
+    var options = new SVG.CanvasOptions();
+    options.Width = 1000;
+    options.Height = 1000;
+    canvas = new SVG.Canvas(div, options);
+    var mod = new TypeViz.ModelBase();
+    mod.Update = function () {
+        mod.Radii = TypeViz.Maths.RandomIntegerArray(15, 5, 80);
+        mod.RaiseChanged();
+    };
+    mod.Update();
+    canvas.DataContext = mod;
+    var factory = [
+        {
+            accessor: function (m) {
+                return m.Radii;
+            },
+            creator: function (d, i, series) {
+                var circle = new TypeViz.SVG.Circle(new TypeViz.Point(50 + i * 50, 300));
+                circle.Background = TypeViz.Media.Colors.RandomBlue;
+                circle.Opacity = .6;
+                return circle;
+            },
+            binders: function (c, i) {
+                c.Bind("Radius", function (m) {
+                    c.Change({Radius: m.Radii[i]}).Play();
+                });
+            }
+        },
+        {
+            accessor: function (m) {
+                return m.Radii;
+            },
+            creator: function (d, i, series) {
+                var tb = new TypeViz.SVG.TextBlock();
+                tb.Position = new TypeViz.Point(50 + i * 50, 370);
+                tb.Anchor = TypeViz.SVG.TextAnchor.Center;
+                tb.dx = 15;
+                return tb;
+            },
+            binders: function (c, i) {
+                c.Bind("Text", function (m) {
+                    return m.Radii[i];
+                });
+            }
+        }
+    ];
+    canvas.Define(factory);
+    var gauge = new TypeViz.SVG.Path();
+    canvas.Append(gauge);
+    var arrow = TypeViz.SVG.Markers.ArrowEnd;
+    canvas.AddMarker(arrow);
+    gauge.MarkerEnd = arrow;
+    function GaugePoints() {
+        var ps = [];
+        var currentValue = new TypeViz.Point(TypeViz.Maths.RandomInteger(60, 750), 380);
+        ps.push(currentValue);
+        ps.push(new TypeViz.Point(currentValue.X, currentValue.Y + 30));
+        ps.push(new TypeViz.Point(800, currentValue.Y + 30));
+        return ps;
+    }
+    gauge.Points = GaugePoints();
+    gauge.Bind("Points", function (m) { gauge.Change({ Data: GaugePoints() }).Play(); });
+    setInterval(function () {
+        mod.Update();
+    }, 3000);
+</code></pre>
+    </div>
+</body>
+</html>

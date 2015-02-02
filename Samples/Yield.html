@@ -1,0 +1,233 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var Point = TypeViz.Point;
+        var CENTER = new TypeViz.Point(400, 300);
+        var mainGroup, tipGroup;
+        var tip, tipContainer;
+        var symbols = ["XEL-PG", "WF", "APPL", "MSFT", "WBPRD", "VYM", "WLLPRA", "VQ", "WMG", "XSD", "XL", "WPP", "ZNH", "VR", "SFI-PF", "SEL", "SAA", "SAI", "SAP", "SIVR", "SMH", "SNA"];
+        function AddIndicator(s) {
+            var r = s.OuterRadius;
+            var v = s.EndAngle;
+            var line = new SVG.Path();
+            line.Stroke = "White";
+            /* line.Interpolator = TypeViz.SVG.Interpolate({
+                 Interpolator: TypeViz.SVG.Interpolators.SplineInterpolator,
+                 IsClosed: false
+             });*/
+            var lastPoint = new Point(50 + 20 * TypeViz.Maths.RandomInteger(0, 7), CENTER.Y - r * Math.cos(v));
+            line.Points = [
+                CENTER,
+                new Point(CENTER.X + r * Math.sin(v), CENTER.Y - r * Math.cos(v)),
+               lastPoint
+            ];
+            var cap = TypeViz.SVG.Markers.FilledCircle;
+            canvas.AddMarker(cap);
+            line.MarkerStart = cap;
+            cap.Background = s.Background;
+            cap.Stroke = "Transparent";
+            line.Stroke = s.Background;
+            mainGroup.Prepend(line);
+            var tb = new TypeViz.SVG.TextBlock();
+            tb.Text = s.symbol;
+            tb.Anchor = TypeViz.SVG.TextAnchor.Center;
+            tb.FontWeight = TypeViz.SVG.FontWeights.Bold;
+            tb.Background = s.Background;
+            tb.Position = new Point(lastPoint.X, lastPoint.Y - 5);
+            mainGroup.Append(tb);
+        }
+        function getData() {
+            var symbol = "MSFT";
+            var data = encodeURIComponent("select * from yahoo.finance.quotes where symbol in ('" + symbol + "')");
+            var url = 'http://query.yahooapis.com/v1/public/yql?q=' + data + "&format=json&diagnostics=true&env=http://datatables.org/alltables.env";
+            var xmlhttp;
+
+            if (window.XMLHttpRequest) {
+                // code for IE7+, Firefox, Chrome, Opera, Safari
+                xmlhttp = new XMLHttpRequest();
+            } else {
+                // code for IE6, IE5
+                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+            }
+
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    // document.getElementById("myDiv").innerHTML = xmlhttp.responseText;
+
+                    var json = JSON.parse(xmlhttp.responseText);
+                    var stuff = json.query.results.quote;
+                    for (var key in stuff) {
+                        console.log(key + ": " + stuff[key]);
+                    }
+
+                }
+            }
+
+            xmlhttp.open("GET", url, true);
+            xmlhttp.send();
+        }
+        function MakeTipShape() {
+            tip = new TypeViz.SVG.Group();
+            tipGroup.Append(tip);
+            var tipShape = new TypeViz.SVG.Path();
+            tipShape.Data = "m-99.25,21.75l79.75,0l20,-20.75l20,20l80.25,0l-0.25,100.5l-199.75,0l0,-99.75z";
+            tipShape.Background = "#afc8cd";
+            tipShape.Opacity = .9;
+            tip.Append(tipShape);
+            tipContainer = new SVG.Group();
+            tipContainer.Position = new Point(-90, 40);
+            tip.Append(tipContainer);
+        }
+
+        function getPopupContent(item) {
+            tipContainer.Clear();
+            if (TypeViz.IsDefined(item)) {
+                var tb = new SVG.TextBlock();
+                tb.Text = item.symbol;
+                tb.Background = "White";
+                tipContainer.Append(tb);
+
+                tb = new SVG.TextBlock();
+                tb.Position = new Point(0, 15);
+                tb.Text = "Up > " + Math.round(TypeViz.Maths.RandomReal()*140)/10 +"%";
+                tb.Background = "White";
+                tipContainer.Append(tb);
+
+                tb = new SVG.TextBlock();
+                tb.Position = new Point(0, 30);
+                tb.Text = "Day's Range > " + Math.round(TypeViz.Maths.RandomReal() * 100) / 100 + " - " + Math.round(TypeViz.Maths.RandomReal() * 100) / 100;
+                tb.Background = "White";
+                tipContainer.Append(tb);
+
+            }
+            return tip;
+        }
+      
+
+        function AddThresholds() {
+            for (var i = 0; i < 7; i++) {
+                var line = new SVG.Line();
+                line.From = new Point(50 + i * 20, 80);
+                line.To = new Point(50 + i * 20, 520);
+                line.Opacity = 0.7;
+                line.Stroke = "White";
+                mainGroup.Prepend(line);
+                var tb = new SVG.TextBlock();
+                tb.Text = "Dividend Yield";
+                tb.Opacity = 0.25;
+                tb.FontSize = 12;
+                tb.Background = "White";
+                tb.FontWeight = TypeViz.SVG.FontWeights.Bold;
+                tb.Position = new Point(65, 70);
+                mainGroup.Append(tb);
+
+            }
+        }
+        function Positioning(item,e) {
+            if (item instanceof TypeViz.Controls.SparkLine) {
+                return new Point(item.Position.X + item.Width/2, item.Position.Y+item.Height);
+            }
+            else {
+                return  canvas.MousePosition(e);
+            }
+        }
+        function document_load() {
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 1000;
+                canvas = new SVG.Canvas(div, options);
+                mainGroup = new TypeViz.SVG.Group();
+                canvas.Append(mainGroup);
+                tipGroup = new SVG.Group();
+                canvas.Append(tipGroup);
+                MakeTipShape();
+                var popup = new TypeViz.Controls.Popup(getPopupContent);
+                popup.Position = Positioning;
+                for (var i = 0; i < 20; i++) {
+                    var b = new SVG.Arc();
+                    var v = Math.round(Math.PI * 2 * Math.random() * 100) / 100;
+                    b.InnerRadius = 10 + i * 10;
+                    b.OuterRadius = 20 + i * 10;
+                    b.StartAngle = 0;
+                    b.EndAngle = 0;
+                    b.StrokeThickness = 0;
+                    b.Center = CENTER;
+                    b.symbol = symbols[i];
+                    b.Background = (new TypeViz.Media.HSL(i * 350 / 25, 0.5, 0.5)).AsHex6;
+                    mainGroup.Append(b);
+
+                    b.Change({ EndAngle: v }, function () {
+                        var subject = this.subjects[0];
+                        AddIndicator(subject);
+                    }).Play();
+
+                    var indicator = new SVG.Rectangle();
+                    indicator.Background = b.Background;
+                    indicator.Width = 5;
+                    indicator.Height = 40;
+                    indicator.Position = (i < 10) ? new Point(645, 43 + i * 50) : new Point(825, 43 + (i - 10) * 50);
+                    mainGroup.Append(indicator);
+
+                    var sparky = new TypeViz.Controls.SparkLine(TypeViz.Maths.RandomIntegerArray(30, 100, 1000));
+                    sparky.Height = 30;
+                    sparky.Width = 150;
+                    sparky.Stroke = "White";
+                    sparky.symbol = symbols[i];
+                    sparky.Update();
+                    sparky.Position = (i < 10) ? new Point(670, 50 + i * 50) : new Point(850, 50 + (i - 10) * 50);
+                    mainGroup.Append(sparky);
+                    popup.AddAnchor(sparky);
+                    popup.AddAnchor(b);
+                }
+                AddThresholds();
+
+
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+    </script>
+    <style>
+        SVG {
+            height: 550px;
+        }
+    </style>
+</head>
+<body onload="document_load()">
+    <div id="main" style="margin: 5% auto;">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Arc diagram and sparklines</div>
+        </div>
+        <div class="small-description">
+            Concept dashboard for financial data. The arc diagram is really just a collection of arcs while the sparklines are reusable controls.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="LayeredLayout.html">&laquo;&nbsp;Layered layout</a></span>
+            <span style="float:right;"><a href="Mindmap.html">Mindmap&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+    </div>
+    
+</body>
+</html>

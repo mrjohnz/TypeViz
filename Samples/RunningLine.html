@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+
+        function document_load() {
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new TypeViz.SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 380;
+                canvas = new TypeViz.SVG.Canvas(div, options);
+                var g = new TypeViz.SVG.Group();
+                canvas.Append(g);
+                g.Transform(new TypeViz.SVG.Translation(210,30));
+                var P = TypeViz.Point;
+                var N = 20, spacing = 30;
+
+                function MakePath() {
+                    var path = new SVG.Path();
+                    path.Background = "none";
+                    var interpolator = TypeViz.SVG.Interpolate({ Interpolator: TypeViz.SVG.Interpolators.CardinalInterpolator, IsClosed: false });
+                    path.Interpolator = interpolator;
+                    path.Stroke = "White";
+                    path.Opacity = 0.6;
+                    var clip1 = MakeClip((N - 3) * spacing, 300);
+                    clip1.Position = new P(spacing, 0);
+                    path.Clip = clip1;
+                    return path;
+                }
+
+                function AssignPoints(path, first) {
+                    var to = [];
+                    for (var i = 0; i < N; i++) {
+                        to.push(new P(i * spacing, 300 - TypeViz.Maths.RandomReal(50, 250)));
+                    }
+                    if (first) {
+                        to[N - 3].Y = first[0].Y;
+                        to[N - 2].Y = first[1].Y;
+                        to[N - 1].Y = first[2].Y;
+                    }
+                    path.Points = to;
+                }
+
+                function MakeClip(width, height) {
+                    var rc = new TypeViz.SVG.Rectangle();
+                    rc.Width = width;
+                    rc.Height = height;
+                    var c = new TypeViz.SVG.ClipPath();
+                    c.Append(rc);
+                    canvas.AddClipPath(c); // just the way SVG works
+                    return c;
+                }
+
+                function FrameIt() {
+                    var rc = new TypeViz.SVG.Rectangle();
+                    rc.Width = (N - 2) * spacing;
+                    rc.Height = 300;
+                    rc.Background = "Transparent";
+                    rc.Stroke = "White";
+                    rc.CornerRadius = 4;
+                    g.Append(rc);
+                }
+                var path1 = MakePath();
+                var path2 = MakePath();
+
+                g.Append(path1);
+                g.Append(path2);
+
+                AssignPoints(path1);
+
+                path2.Position = new P((-2 * N + 4) * spacing, 0);
+                path1.Position = new P(-(N - 1) * spacing, 0);
+
+                var clip = MakeClip((N - 2) * spacing, 300);
+
+                g.Clip = clip;
+
+                FrameIt();
+
+                inter = setInterval(function () {
+
+                    path1.Position = new TypeViz.Point(path1.Position.X + 2, 0);
+                    path2.Position = new TypeViz.Point(path2.Position.X + 2, 0);
+
+                    if (path1.Position.X == -spacing) {
+                        AssignPoints(path2, path1.Points);
+                        if (path2.Position.X >= (N - 4) * spacing)
+                            path2.Position = new P((-N + 2) * spacing, 0);
+                    }
+                    if (path2.Position.X == -spacing) {
+                        AssignPoints(path1, path2.Points);
+                        if (path1.Position.X >= (N - 4) * spacing)
+                            path1.Position = new P((-N + 2) * spacing, 0);
+
+                    }
+                }, 10);
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+
+    </script>
+    <style>
+        SVG {
+            margin: 0;
+        }
+    </style>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Data series</div>
+        </div>
+        <div class="small-description">
+            This demonstrates the animation functions and the ability to visualize realtime data series. Note that a path is defined by a series of points onto which various interpolators can be applied.  See also the <a href="LineChart.html">line chart</a> for a similar concept.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="WheelChart.html">&laquo;&nbsp;Wheel chart</a></span>
+            <span style="float:right;"><a href="TreePack.html">Tree packing&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+
+        </div>
+        <pre style="margin-top:20px;"><code>
+    
+            var options = new TypeViz.SVG.CanvasOptions();
+            options.Width = 1000;
+            options.Height = 1000;
+            canvas = new TypeViz.SVG.Canvas(div, options);
+            var g = new TypeViz.SVG.Group();
+            canvas.Append(g);
+            var P = TypeViz.Point;
+            var N = 20, spacing = 30;
+            function MakePath() {
+                var path = new SVG.Path();
+                path.Background = "none";
+                var interpolator = TypeViz.SVG.Interpolate({ 
+                        Interpolator: TypeViz.SVG.Interpolators.LineStepInterpolator,
+                        IsClosed: false });
+                path.Interpolator = interpolator;
+                path.Stroke = "White";
+                path.Opacity = 0.6;
+                var clip1 = MakeClip((N - 3) * spacing, 300);
+                clip1.Position = new P(spacing, 0);
+                path.Clip = clip1;
+                return path;
+            }
+            function AssignPoints(path, first) {
+                var to = [];
+                for (var i = 0; i < N; i++) {
+                    to.push(new P(i * spacing, 300 - TypeViz.Maths.RandomReal(50, 250)));
+                }
+                if (first) {
+                    to[N - 3].Y = first[0].Y;
+                    to[N - 2].Y = first[1].Y;
+                    to[N - 1].Y = first[2].Y;
+                }
+                path.Points = to;
+            }
+            function MakeClip(width, height) {
+                var rc = new TypeViz.SVG.Rectangle();
+                rc.Width = width;
+                rc.Height = height;
+                var c = new TypeViz.SVG.ClipPath();
+                c.Append(rc);
+                canvas.AddClipPath(c); // just the way SVG works
+                return c;
+            }
+            function FrameIt() {
+                var rc = new TypeViz.SVG.Rectangle();
+                rc.Width = (N - 2) * spacing;
+                rc.Height = 300;
+                rc.Background = "Transparent";
+                rc.Stroke = "White";
+                rc.CornerRadius = 4;
+                canvas.Append(rc);
+            }
+            var path1 = MakePath();
+            var path2 = MakePath();
+            g.Append(path1);
+            g.Append(path2);
+            AssignPoints(path1);
+            path2.Position = new P((-2 * N + 4) * spacing, 0);
+            path1.Position = new P(-(N - 1) * spacing, 0);
+            var clip = MakeClip((N - 2) * spacing, 300);
+            g.Clip = clip;
+            FrameIt();
+            inter = setInterval(function () {
+                path1.Position = new TypeViz.Point(path1.Position.X + 2, 0);
+                path2.Position = new TypeViz.Point(path2.Position.X + 2, 0);
+                if (path1.Position.X == -spacing) {
+                    AssignPoints(path2, path1.Points);
+                    if (path2.Position.X >= (N - 4) * spacing)
+                        path2.Position = new P((-N + 2) * spacing, 0);
+                }
+                if (path2.Position.X == -spacing) {
+                    AssignPoints(path1, path2.Points);
+                    if (path1.Position.X >= (N - 4) * spacing)
+                        path1.Position = new P((-N + 2) * spacing, 0);
+                }
+            }, 10);
+            </code></pre>
+    </div>
+</body>
+</html>

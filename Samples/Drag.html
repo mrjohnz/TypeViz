@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var P = TypeViz.Point;
+
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 1000;
+                canvas = new SVG.Canvas(div, options);
+
+                function getp(p) {
+                    var ps = [];
+                    ps.push(new P(0, 0));
+                    ps.push(new P(0, 50));
+                    ps.push(new P(p.X - 150, p.Y + 50));
+                    ps.push(new P(p.X+50, p.Y+50));
+                    return ps;
+                }
+
+                var startloc = new P(300, 300);
+                var path = new TypeViz.SVG.Path();
+                var interpolator = TypeViz.SVG.Interpolate({ Interpolator: TypeViz.SVG.Interpolators.Spline, IsClosed: false });
+                path.Interpolator = interpolator;
+                path.Points = getp(startloc);
+                canvas.Append(path);
+
+                var rg = new TypeViz.Media.RadialGradient();
+                var st = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.Red, 1);
+                var ws = new TypeViz.Media.GradientStop(TypeViz.Media.Colors.White, 0.43);
+                rg.AddGradientStops(ws, st);
+                rg.Center = new TypeViz.Point(0, 0);
+                canvas.AddGradient(rg);
+                path.Stroke = rg;
+
+                var circle = new TypeViz.SVG.Circle(startloc, 50);
+                canvas.Append(circle);
+
+                circle.Drag(function (p, c) {
+                    path.Points = getp(p);
+                });
+
+            }
+            else
+                alert('No DIV found.');
+        }
+
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Draggin elements</div>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+
+        </div>
+    </div>
+</body>
+</html>

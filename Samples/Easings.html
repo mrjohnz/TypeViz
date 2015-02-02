@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var Point = TypeViz.Point;
+        var CENTER = new TypeViz.Point(300, 260);
+        var mainGroup;
+        function reverse(c) {
+            if (c.forward) {
+                c.forward = false;
+                move(c, c.from);
+            }
+            else {
+                c.forward = true;
+                move(c, c.to);
+            }
+        }
+        function move(c, p) {
+            if (!p) p = c.to;
+            c.Change({
+                Position: p,
+                Easing: c.ease
+            }, function () { reverse(c); }).Play();
+        }
+        function document_load() {
+
+
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 600;
+                canvas = new SVG.Canvas(div, options);
+                mainGroup = new TypeViz.SVG.Group();
+                canvas.Append(mainGroup);
+                //mainGroup.Transform(new TypeViz.SVG.Translation(10, 0));
+                var frame = new TypeViz.SVG.Rectangle();
+                frame.Stroke = "White";
+                frame.Background = "Transparent";
+                frame.CornerRadius = 5;
+                frame.Height = 300;
+                frame.Width = 600;
+                frame.Position = new Point(50, 50);
+                mainGroup.Append(frame);
+
+                var easings = [
+                    { title: "Very bouncy", ease: TypeViz.Animation.Easing.VeryBouncy },
+                     { title: "Linear", ease: TypeViz.Animation.Easing.Linear },
+                     { title: "Ease In", ease: TypeViz.Animation.Easing.EaseIn },
+                     { title: "Very Elastic", ease: TypeViz.Animation.Easing.VeryElastic },
+                     { title: "Ease Out", ease: TypeViz.Animation.Easing.EaseOut },
+                     { title: "Bouncy", ease: TypeViz.Animation.Easing.Bouncy },
+                     { title: "Elastic", ease: TypeViz.Animation.Easing.Elastic }
+                ];
+                for (var i = 0; i < easings.length; i++) {
+                    var e = easings[i];
+                    var c = new TypeViz.SVG.Circle();
+                    c.Background = TypeViz.Media.Colors.RandomGreen;// "Orange";
+                    c.Radius = 10;
+                    c.Center = CENTER;
+                    mainGroup.Append(c);
+                    c.forward = true;
+                    c.from = new Point(250, 100 + i * 30);
+                    c.to = new Point(500, 100 + i * 30);
+                    c.ease = e.ease;
+                    var tb = new TypeViz.SVG.TextBlock();
+                    tb.Text = e.title;
+                    tb.Background = "White";
+                    tb.dy = 1;
+                    tb.Position = new Point(530, 100 + i * 30);
+                    mainGroup.Append(tb);
+                    move(c);
+                }
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+    </script>
+    <style>
+        SVG {
+            height: 420px;
+        }
+    </style>
+</head>
+<body onload="document_load()">
+    <div id="main" style="margin: 5% auto;">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Easings</div>
+        </div>
+        <div class="small-description">
+            The animation module contains various in and outgoing easing functions.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="Grow.html">&laquo;&nbsp;Dynamic diagram</a></span>
+            <span style="float:right;"><a href="RadialDiagram.html">Radial diagram&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre><code>
+        var easings = [
+            { title: "Very bouncy", ease: TypeViz.Animation.Easing.VeryBouncy },
+                { title: "Linear", ease: TypeViz.Animation.Easing.Linear },
+                { title: "Ease In", ease: TypeViz.Animation.Easing.EaseIn },
+                { title: "Very Elastic", ease: TypeViz.Animation.Easing.VeryElastic },
+                { title: "Ease Out", ease: TypeViz.Animation.Easing.EaseOut },
+                { title: "Bouncy", ease: TypeViz.Animation.Easing.Bouncy },
+                { title: "Elastic", ease: TypeViz.Animation.Easing.Elastic }
+        ];
+        for (var i = 0; i < easings.length; i++) {
+            var e = easings[i];
+            var c = new TypeViz.SVG.Circle();
+            c.Background = TypeViz.Media.Colors.RandomGreen;// "Orange";
+            c.Radius = 10;
+            c.Center = CENTER;
+            mainGroup.Append(c);
+            c.forward = true;
+            c.from = new Point(250, 100 + i * 30);
+            c.to = new Point(500, 100 + i * 30);
+            c.ease = e.ease;
+            var tb = new TypeViz.SVG.TextBlock();
+            tb.Text = e.title;
+            tb.Background = "White";
+            tb.dy = 1;
+            tb.Position = new Point(530, 100 + i * 30);
+            mainGroup.Append(tb);
+            move(c);
+        }
+    </code></pre>   
+    </div>
+
+</body>
+</html>

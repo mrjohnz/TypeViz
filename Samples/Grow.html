@@ -1,0 +1,326 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>TypeViz</title>
+    <link rel="shortcut icon" href="/favicon.ico" type='image/x-icon'>
+    <meta name="description" content="Data visualization for TypeScript.">
+    <meta name="keywords" content="data visualization, dataviz, TypeScript, HTML5, JavaScript, diagramming, graphs">
+    <link href="../styles/TypeScript.css" rel="stylesheet" />
+    <script src="../libs/Analytics.js"></script>
+
+    <link rel="stylesheet" href="/styles/highlightjs/mono-blue.css">
+    <script src="/libs/highlight.min.js"></script>
+
+    <script src="../release/0.1/TypeViz.js" type="text/javascript"></script>
+  
+    <script type="text/javascript">
+        var canvas;
+        var SVG = TypeViz.SVG;
+        var MAN = "m10.61865,6.39368c0,-3.53195 3.47754,-6.39368 7.76807,-6.39368c4.29199,0 7.76953,2.86172 7.76953,6.39368c0,3.53195 -3.47754,6.39247 -7.76953,6.39247c-4.29053,0 -7.76807,-2.86052 -7.76807,-6.39247zm26.11963,18.09613l0,-3.22939c0,-3.39694 -3.34424,-6.15138 -7.4751,-6.15138l-21.77637,0c-4.12793,0 -7.47363,2.75444 -7.47363,6.15138l0,3.22939c-0.00879,0.07353 -0.01318,0.14827 -0.01318,0.22421l0,18.59637c0,1.44533 1.42236,2.61578 3.17871,2.61578c1.75342,0 3.17871,-1.17046 3.17871,-2.61578l0,-18.32033l2.13281,0l0,20.93732l0.01611,0l0,29.58643c0,1.92268 1.89697,3.48618 4.23633,3.48618c2.34082,0 4.23779,-1.56108 4.23779,-3.48618l0,-29.58643l2.79639,0l0,29.58643c0,1.92268 1.89844,3.48618 4.23633,3.48618c2.34082,0 4.23779,-1.56108 4.23779,-3.48618l0,-29.58643l0.01318,0l0,-20.93732l2.13135,0l0,18.32033c0,1.44412 1.42529,2.61578 3.18018,2.61578c1.75488,0 3.17871,-1.17166 3.17871,-2.61578l0,-18.59758c-0.00146,-0.07715 -0.00879,-0.14948 -0.01611,-0.22301l0,0z";
+        var WOMAN = "m18.72038,12.46162c3.70636,0 6.71381,-2.78841 6.71381,-6.22923c0,-3.44159 -3.00745,-6.23239 -6.71381,-6.23239c-3.70981,0 -6.71887,2.7908 -6.71887,6.23239c0,3.44083 3.00821,6.22923 6.71887,6.22923zm18.83066,26.86316l-6.02582,-20.73154c-0.05603,-0.1889 -0.13489,-0.36835 -0.23077,-0.53439c-0.6846,-1.94157 -2.65018,-3.34796 -4.97128,-3.34796l-15.25061,0c-2.42032,0 -4.45213,1.52678 -5.0502,3.59898c-0.04071,0.09135 -0.07466,0.18654 -0.10431,0.28493l-5.91805,20.7316c-0.39447,1.35915 0.47505,2.75533 1.94188,3.12126c1.46506,0.3644 2.97087,-0.44305 3.36539,-1.80229l4.64803,-16.28488l1.9359,0l-8.43498,29.46504l7.94807,0l0,20.34196c0,1.56459 1.36493,2.83252 3.05399,2.83252c1.68481,0 3.05319,-1.26633 3.05319,-2.83252l0,-20.34196l2.42795,0l0,20.34196c0,1.56459 1.36755,2.83252 3.05576,2.83252c1.68478,0 3.05316,-1.26633 3.05316,-2.83252l0,-20.34196l7.94388,0l-8.46649,-29.46504l1.98773,0l4.73285,16.28488c0.3945,1.35924 1.90033,2.16669 3.36533,1.80229c1.46173,-0.36594 2.3313,-1.76367 1.93942,-3.12288l0,0z";
+        var Point = TypeViz.Point;
+        var CENTER = new Point(300, 300);
+        var mainGroup;
+        var ICONSIZE = 50;
+        var FADEIN = 3000;
+        var line1;
+        var cap = TypeViz.SVG.Markers.ArrowStart;
+        var startCap = TypeViz.SVG.Markers.FilledCircle;
+        var interpolator = TypeViz.SVG.Interpolate({
+            Interpolator: TypeViz.SVG.Interpolators.SplineInterpolator,
+            IsClosed: false
+        });
+        function MakePerson(pos, gender) {
+            var g = new SVG.Group();
+            var path = new TypeViz.SVG.PathBase();
+            path.Data = gender;
+            path.StrokeThickness = 0;
+            path.Background = "White";
+            g.Append(path);
+            path.Transform(/*new TypeViz.SVG.Translation(pos.X, pos.Y),*/ new TypeViz.SVG.Scale(0.5, 0.6));
+            var tb = new SVG.TextBlock();
+            tb.Text = "Identified";
+            tb.Background = "White";
+            tb.Opacity = 0.6;
+            tb.Position = new Point(25, 25);
+            g.Append(tb);
+            g.Position = pos;
+            mainGroup.Append(g);
+            return g;
+        }
+        function PushLog(p) {
+            var g = new SVG.Group();
+
+            var r = new SVG.Rectangle();
+            r.CornerRadius = 5;
+            r.Background = "Transparent";
+            r.Stroke = "White";
+            r.Width = 200;
+            r.Height = 80;
+            g.Append(r);
+
+            var tb = new SVG.TextBlock();
+            tb.Text = "Time: " + TypeViz.Maths.RandomInteger(984, 2354) + "ms";
+            tb.Background = "White";
+            tb.Opacity = 0.6;
+            tb.Position = new Point(5, 15);
+            g.Append(tb);
+
+            var spark = new TypeViz.Controls.SparkLine(TypeViz.Maths.RandomIntegerArray(50, 1000, 2354));
+            g.Append(spark);
+            spark.Height = 30;
+            spark.Width = 150;
+            spark.Update();
+            spark.Position = new Point(20, 30);
+
+
+            mainGroup.Append(g);
+            g.Position = p;
+        }
+        function AppendDot(p, color) {
+            var c = new SVG.Circle();
+            c.Background = color;
+            c.Radius = 5;
+            c.Center = p;
+            mainGroup.Append(c);
+        }
+        function AppendStation(p, index) {
+
+            if (index === 0) {
+                AppendImage("World.png", new Point(p.X - 55, p.Y - 25));
+                AppendDot(p, "LimeGreen");
+            }
+            else if (index === 1) {
+                AppendImage("Dispatch.png", new Point(p.X - 25, p.Y - 52));
+                AppendDot(p, "LimeGreen");
+                var points2 = [new Point(150, 100), new Point(150, 200)];
+                var line2 = new SVG.Path();
+                line2.Stroke = "White";
+                line2.StrokeDash = [2, 2];
+                mainGroup.Append(line2);
+                line2.Grow(points2, function (p, i) {
+                    if (i === 1) {
+                        AppendImage("Hierarchy.png", new Point(p.X - 25, p.Y + 5));
+                        AppendDot(p, "LimeGreen");
+                    }
+                });
+            }
+            else if (index === 2) {
+                AppendDot(p, "LimeGreen");
+                var points3 = [p, new Point(300, 200), new Point(400, 200)];
+                var line3 = new SVG.Path();
+                line3.Stroke = "Orange";
+                line3.StrokeDash = [2, 2];
+                mainGroup.Append(line3);
+                line3.Grow(points3, function (p, i) {
+                    if (i === 2) {
+                        AppendImage("Gear.png", new Point(p.X + 5, p.Y - 25));
+                        AppendDot(p, "Orange");
+                        var binding = new SVG.Path();
+                        binding.Interpolator = interpolator;
+                        binding.Stroke = "White";
+                        binding.Opacity = 0.5;
+                        binding.Points = [new Point(p.X + 60, p.Y), new Point(p.X + 75, p.Y - 45), new Point(p.X + 60, p.Y - 100)];
+                        mainGroup.Append(binding);
+
+                        MakePerson(new Point(p.X + 80, p.Y - 65), MAN);
+                        var logl = new SVG.Path();
+                        logl.Stroke = "White";
+                        logl.StrokeDash = [2, 2];
+                        mainGroup.Append(logl);
+                        logl.Grow([new Point(p.X + 30, p.Y + 30), new Point(p.X + 30, p.Y + 100)], function (m, k) {
+                            if (k === 1) {
+                                PushLog(new Point(p.X - 60, 300));
+                                AppendDot(m, "White");
+                            } else if (k === 0) {
+                                AppendDot(m, "White");
+                            }
+                        });
+
+                    }
+                });
+
+            }
+            else if (index === 3) {
+                AppendImage("Mail.png", new Point(p.X + 5, p.Y - 25));
+                line1.MarkerStart = cap;
+            }
+        }
+
+        function AppendImage(name, p) {
+            var image = new TypeViz.SVG.Image();
+            image.Url = "/images/" + name;
+            image.Width = ICONSIZE;
+            image.Height = ICONSIZE;
+            image.Position = new Point(p.X, p.Y);
+            mainGroup.FadeIn(image, FADEIN);
+        }
+        function document_load() {
+            var div = document.getElementById("canvas");
+            if (div) {
+                var options = new SVG.CanvasOptions();
+                options.Width = 1000;
+                options.Height = 400;
+                canvas = new SVG.Canvas(div, options);
+                mainGroup = new TypeViz.SVG.Group();
+                canvas.Append(mainGroup);
+                canvas.AddMarker(cap);
+                canvas.AddMarker(startCap);
+
+                var netLine = new SVG.Line();
+                netLine.Stroke = "White";
+                netLine.From = new Point(100, 0);
+                netLine.To = new Point(100, 400);
+                mainGroup.Append(netLine);
+
+                var dmzLine = new SVG.Line();
+                dmzLine.Stroke = "White";
+                dmzLine.From = new Point(200, 0);
+                dmzLine.To = new Point(200, 400);
+                mainGroup.Append(dmzLine);
+
+                var points1 = [new Point(75, 195), new Point(150, 100), new Point(300, 100), new Point(400, 100)];
+                line1 = new SVG.Path();
+                line1.MarkerEnd = startCap;
+                cap.Background = "LimeGreen";
+                cap.Stroke = "Transparent";
+                line1.Stroke = "LimeGreen";
+                mainGroup.Append(line1);
+                line1.Grow(points1, AppendStation);
+
+
+            }
+            else
+                alert('No DIV found.');
+        }
+        hljs.initHighlightingOnLoad();
+    </script>
+</head>
+<body onload="document_load()">
+    <div id="main">
+        <div id="header">
+            <a href="/" style="text-decoration: none"><div id="emph"></div><div id="title">TypeViz</div> </a><div id="subtitle">| Dynamic lines</div>
+        </div>
+        <div class="small-description">
+            Here is an example of animated lines and usage of images to represent network activity or the flow of some process.
+        </div>
+        <div class="Navigator">
+            <span style="float:left;"><a href="ClosePack.html">&laquo;&nbsp;Close packing</a></span>
+            <span style="float:right;"><a href="Easings.html">Easings&nbsp;&raquo;</a></span>
+        </div>
+        <div id="viz">
+            <div id="canvas"></div>
+        </div>
+        <pre><code>
+   function AppendStation(p, index) {
+    if (index === 0) {
+        AppendImage("World.png", new Point(p.X - 55, p.Y - 25));
+        AppendDot(p, "LimeGreen");
+    }
+    else if (index === 1) {
+        AppendImage("Dispatch.png", new Point(p.X - 25, p.Y - 52));
+        AppendDot(p, "LimeGreen");
+        var points2 = [new Point(150, 100), new Point(150, 200)];
+        var line2 = new SVG.Path();
+        line2.Stroke = "White";
+        line2.StrokeDash = [2, 2];
+        mainGroup.Append(line2);
+        line2.Grow(points2, function (p, i) {
+            if (i === 1) {
+                AppendImage("Hierarchy.png", new Point(p.X - 25, p.Y + 5));
+                AppendDot(p, "LimeGreen");
+            }
+        });
+    }
+    else if (index === 2) {
+        AppendDot(p, "LimeGreen");
+        var points3 = [p, new Point(300, 200), new Point(400, 200)];
+        var line3 = new SVG.Path();
+        line3.Stroke = "Orange";
+        line3.StrokeDash = [2, 2];
+        mainGroup.Append(line3);
+        line3.Grow(points3, function (p, i) {
+            if (i === 2) {
+                AppendImage("Gear.png", new Point(p.X + 5, p.Y - 25));
+                AppendDot(p, "Orange");
+                var binding = new SVG.Path();
+                binding.Interpolator = interpolator;
+                binding.Stroke = "White";
+                binding.Opacity = 0.5;
+                binding.Points = [new Point(p.X + 60, p.Y), 
+                                  new Point(p.X + 75, p.Y - 45), 
+                                  new Point(p.X + 60, p.Y - 100)];
+                mainGroup.Append(binding);
+                MakePerson(new Point(p.X + 80, p.Y - 65), MAN);
+                var logl = new SVG.Path();
+                logl.Stroke = "White";
+                logl.StrokeDash = [2, 2];
+                mainGroup.Append(logl);
+                logl.Grow([new Point(p.X + 30, p.Y + 30), 
+                           new Point(p.X + 30, p.Y + 100)],
+                 function (m, k) {
+                    if (k === 1) {
+                        PushLog(new Point(p.X - 60, 300));
+                        AppendDot(m, "White");
+                    } else if (k === 0) {
+                        AppendDot(m, "White");
+                    }
+                });
+            }
+        });
+    }
+    else if (index === 3) {
+        AppendImage("Mail.png", new Point(p.X + 5, p.Y - 25));
+        line1.MarkerStart = cap;
+    }
+    }
+    function AppendImage(name, p) {
+    var image = new TypeViz.SVG.Image();
+    image.Url = "/images/" + name;
+    image.Width = ICONSIZE;
+    image.Height = ICONSIZE;
+    image.Position = new Point(p.X, p.Y);
+    mainGroup.FadeIn(image, FADEIN);
+    }
+    function document_load() {
+    var div = document.getElementById("canvas");
+    if (div) {
+        var options = new SVG.CanvasOptions();
+        options.Width = 1000;
+        options.Height = 400;
+        canvas = new SVG.Canvas(div, options);
+        mainGroup = new TypeViz.SVG.Group();
+        canvas.Append(mainGroup);
+        canvas.AddMarker(cap);
+        canvas.AddMarker(startCap);
+        var netLine = new SVG.Line();
+        netLine.Stroke = "White";
+        netLine.From = new Point(100, 0);
+        netLine.To = new Point(100, 400);
+        mainGroup.Append(netLine);
+        var dmzLine = new SVG.Line();
+        dmzLine.Stroke = "White";
+        dmzLine.From = new Point(200, 0);
+        dmzLine.To = new Point(200, 400);
+        mainGroup.Append(dmzLine);
+        var points1 = [new Point(75, 195), 
+                       new Point(150, 100),
+                       new Point(300, 100),
+                       new Point(400, 100)];
+        line1 = new SVG.Path();
+        line1.MarkerEnd = startCap;
+        cap.Background = "LimeGreen";
+        cap.Stroke = "Transparent";
+        line1.Stroke = "LimeGreen";
+        mainGroup.Append(line1);
+        line1.Grow(points1, AppendStation);
+    }
+    else
+        alert('No DIV found.');
+    }
+
+</code></pre>
+    </div>
+</body>
+</html>
